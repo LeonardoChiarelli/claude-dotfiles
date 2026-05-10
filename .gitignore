@@ -1,0 +1,17 @@
+sessions/
+cache/
+downloads/
+backups/
+history.jsonl
+file-history/
+shell-snapshots/
+stats-cache.json
+mcp-needs-auth-cache.json
+ide/
+tasks/
+plans/
+memory/
+*.local.*
+settings.local.json
+vercel-plugin-device-id
+vercel-plugin-telemetry-preference
