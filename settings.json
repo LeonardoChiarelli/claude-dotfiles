@@ -4,9 +4,17 @@
     "defaultMode": "default"
   },
   "enabledPlugins": {
-    "vercel-plugin@vercel-vercel-plugin": true,
     "superpowers@claude-plugins-official": true,
-    "frontend-design@claude-plugins-official": true
+    "frontend-design@claude-plugins-official": true,
+    "caveman@caveman": true
+  },
+  "extraKnownMarketplaces": {
+    "caveman": {
+      "source": {
+        "source": "github",
+        "repo": "JuliusBrussee/caveman"
+      }
+    }
   },
   "effortLevel": "xhigh",
   "editorMode": "vim",

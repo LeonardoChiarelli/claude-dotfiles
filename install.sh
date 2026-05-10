@@ -68,13 +68,17 @@ else
   echo "       Then add ~/.local/bin to PATH in your shell profile"
 fi
 
-# ── 6. Configure rtk hook in settings.local.json ─────────────────────────
-RTK_BIN="$(command -v rtk 2>/dev/null || echo '')"
+# ── 6. Symlink rtk hook script ───────────────────────────────────────────
+mkdir -p "$CLAUDE_DIR/hooks"
+ln -sf "$DOTFILES_DIR/hooks/rtk-rewrite.sh" "$CLAUDE_DIR/hooks/rtk-rewrite.sh"
+chmod +x "$DOTFILES_DIR/hooks/rtk-rewrite.sh"
+echo "[ok]   ~/.claude/hooks/rtk-rewrite.sh → $DOTFILES_DIR/hooks/rtk-rewrite.sh"
+
+# ── 7. Configure rtk hook in settings.local.json ─────────────────────────
 LOCAL_SETTINGS="$CLAUDE_DIR/settings.local.json"
 
-if [ -n "$RTK_BIN" ]; then
-  if [ ! -f "$LOCAL_SETTINGS" ]; then
-    cat > "$LOCAL_SETTINGS" <<EOF
+if [ ! -f "$LOCAL_SETTINGS" ]; then
+  cat > "$LOCAL_SETTINGS" <<EOF
 {
   "permissions": {
     "allow": []
@@ -86,7 +90,7 @@ if [ -n "$RTK_BIN" ]; then
         "hooks": [
           {
             "type": "command",
-            "command": "$RTK_BIN rewrite"
+            "command": "bash $CLAUDE_DIR/hooks/rtk-rewrite.sh"
           }
         ]
       }
@@ -94,20 +98,19 @@ if [ -n "$RTK_BIN" ]; then
   }
 }
 EOF
-    echo "[ok]   ~/.claude/settings.local.json created with rtk PreToolUse hook"
-  else
-    echo "[skip] ~/.claude/settings.local.json already exists"
-    echo "       Add rtk hook manually — see README.md for the JSON snippet"
-  fi
+  echo "[ok]   ~/.claude/settings.local.json created with rtk PreToolUse hook"
+else
+  echo "[skip] ~/.claude/settings.local.json already exists"
+  echo "       Ensure the rtk hook is present — see README.md for the JSON snippet"
 fi
 
-# ── 7. Install caveman (output compression plugin) ────────────────────────
+# ── 8. Install caveman (output compression plugin) ────────────────────────
 echo ""
 echo "==> Installing caveman..."
 curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash
 echo "[ok]   caveman installed"
 
-# ── 8. Manual steps reminder ─────────────────────────────────────────────
+# ── 9. Manual steps reminder ─────────────────────────────────────────────
 echo ""
 echo "==> Done! One manual step remaining:"
 echo ""
