@@ -17,18 +17,18 @@ echo ""
 # ── 1. Create ~/.claude if missing ────────────────────────────────────────
 mkdir -p "$CLAUDE_DIR"
 
-# ── 2. Symlink skills ─────────────────────────────────────────────────────
-if [ -L "$CLAUDE_DIR/skills" ]; then
-  echo "[skip] ~/.claude/skills already symlinked"
-elif [ -d "$CLAUDE_DIR/skills" ]; then
-  echo "[warn] ~/.claude/skills is a real directory — backing up to ~/.claude/skills.bak"
-  mv "$CLAUDE_DIR/skills" "$CLAUDE_DIR/skills.bak"
-  ln -s "$DOTFILES_DIR/skills" "$CLAUDE_DIR/skills"
-  echo "[ok]   ~/.claude/skills → $DOTFILES_DIR/skills"
-else
-  ln -s "$DOTFILES_DIR/skills" "$CLAUDE_DIR/skills"
-  echo "[ok]   ~/.claude/skills → $DOTFILES_DIR/skills"
-fi
+# ── 2. Sync skills (individual copies — preserves pre-existing symlinks) ──
+mkdir -p "$CLAUDE_DIR/skills"
+for skill_dir in "$DOTFILES_DIR/skills"/*/; do
+  skill_name=$(basename "$skill_dir")
+  target="$CLAUDE_DIR/skills/$skill_name"
+  if [ -e "$target" ] || [ -L "$target" ]; then
+    echo "[skip] ~/.claude/skills/$skill_name already exists"
+  else
+    cp -r "$skill_dir" "$target"
+    echo "[ok]   ~/.claude/skills/$skill_name installed"
+  fi
+done
 
 # ── 3. Symlink CLAUDE.md ──────────────────────────────────────────────────
 if [ -L "$CLAUDE_DIR/CLAUDE.md" ]; then
