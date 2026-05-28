@@ -1,10 +1,23 @@
 #!/usr/bin/env bash
-# Claude Code dotfiles bootstrap
-# Run this on any new machine:
+# Claude Code dotfiles bootstrap — macOS / Linux
+# Run this on any new Unix machine:
 #   git clone git@github.com:LeonardoChiarelli/claude-dotfiles.git ~/dotfiles/claude
 #   bash ~/dotfiles/claude/install.sh
+#
+# On Windows, use the PowerShell counterpart instead:
+#   pwsh -File ~/dotfiles/claude/install.ps1
 
 set -euo pipefail
+
+# Pick an available package manager for jq / rtk fallbacks.
+pkg_install() {
+  local pkg="$1"
+  if command -v brew &>/dev/null;    then brew install "$pkg"; return $?; fi
+  if command -v apt-get &>/dev/null; then sudo apt-get update -qq && sudo apt-get install -y "$pkg"; return $?; fi
+  if command -v dnf &>/dev/null;     then sudo dnf install -y "$pkg"; return $?; fi
+  if command -v pacman &>/dev/null;  then sudo pacman -S --noconfirm "$pkg"; return $?; fi
+  return 1
+}
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLAUDE_DIR="$HOME/.claude"
@@ -54,18 +67,31 @@ else
   echo "       Review $SETTINGS_SRC and merge manually if needed"
 fi
 
-# ── 5. Install rtk (token-efficient CLI proxy) ────────────────────────────
+# ── 5a. Install jq (needed by the rtk hook) ───────────────────────────────
+echo ""
+echo "==> Installing jq..."
+if command -v jq &>/dev/null; then
+  echo "[skip] jq already installed: $(jq --version 2>/dev/null)"
+elif pkg_install jq; then
+  echo "[ok]   jq installed"
+else
+  echo "[warn] No supported package manager found. Install jq manually:"
+  echo "       https://jqlang.github.io/jq/download/"
+fi
+
+# ── 5b. Install rtk (token-efficient CLI proxy) ───────────────────────────
 echo ""
 echo "==> Installing rtk..."
 if command -v rtk &>/dev/null; then
   echo "[skip] rtk already installed: $(rtk --version 2>/dev/null || echo 'unknown version')"
-elif command -v brew &>/dev/null; then
-  brew install rtk
+elif command -v brew &>/dev/null && brew install rtk 2>/dev/null; then
   echo "[ok]   rtk installed via Homebrew"
+elif command -v cargo &>/dev/null && cargo install rtk; then
+  echo "[ok]   rtk installed via cargo"
 else
-  echo "[warn] Homebrew not found. Install rtk manually:"
-  echo "       curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh"
-  echo "       Then add ~/.local/bin to PATH in your shell profile"
+  echo "[warn] No package manager available for rtk — using the official installer:"
+  curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+  echo "[warn] rtk installs to ~/.local/bin — ensure that directory is on your PATH"
 fi
 
 # ── 6. Symlink rtk hook script ───────────────────────────────────────────

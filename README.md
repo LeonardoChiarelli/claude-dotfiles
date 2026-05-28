@@ -4,17 +4,29 @@ Claude Code global config — skills, CLAUDE.md, bootstrap script.
 
 ## Setup on a new machine
 
+**macOS / Linux:**
 ```bash
 git clone git@github.com:LeonardoChiarelli/claude-dotfiles.git ~/dotfiles/claude
 bash ~/dotfiles/claude/install.sh
 ```
 
-That's it. The script will:
-1. Symlink `~/.claude/skills` and `~/.claude/CLAUDE.md` to this repo
-2. Create `~/.claude/settings.json` from the template (skips if it already exists)
-3. Install `rtk` via Homebrew and configure the PreToolUse hook in `settings.local.json`
-4. Install `caveman` plugin for Claude Code
+**Windows (PowerShell 7+):**
+```powershell
+git clone https://github.com/LeonardoChiarelli/claude-dotfiles.git $HOME\dotfiles\claude
+pwsh -File $HOME\dotfiles\claude\install.ps1
+```
+
+That's it. Both scripts do the same thing for their platform:
+1. Link/copy `~/.claude/skills` and `~/.claude/CLAUDE.md` from this repo
+   - Unix symlinks; Windows copies (symlinks need admin/Developer Mode) — re-run after `git pull` to refresh
+2. Create or **merge** `~/.claude/settings.json` from the template (preserves existing keys)
+3. Install `jq` + `rtk` (Homebrew/apt/dnf/pacman/cargo on Unix, winget/cargo on Windows) and configure the PreToolUse hook in `settings.local.json`
+4. Install the `caveman` plugin for Claude Code
 5. Print instructions for the `context-mode` plugin (requires Claude Code UI)
+
+### Cross-platform notes
+- The rtk hook (`hooks/rtk-rewrite.sh`) is a single Bash script used on every OS. On Windows it runs through **Git Bash**, so Git for Windows must be installed.
+- `jq` and `rtk` are required for the hook to actually rewrite commands; if either is missing the hook degrades to a no-op (no errors).
 
 ## Manual step after install
 
@@ -37,10 +49,13 @@ Restart Claude Code after.
 
 ```
 claude-dotfiles/
-├── install.sh          # bootstrap script
+├── install.sh          # bootstrap script (macOS / Linux)
+├── install.ps1         # bootstrap script (Windows / PowerShell 7+)
 ├── settings.json       # template (no machine-specific paths)
 │                       # settings.local.json lives per-machine, not versioned
 ├── CLAUDE.md           # global Claude instructions
+├── hooks/
+│   └── rtk-rewrite.sh  # rtk PreToolUse hook (Bash; runs via Git Bash on Windows)
 ├── skills/
 │   ├── find-skills/
 │   ├── graphify/
