@@ -1000,21 +1000,21 @@ git commit -m "docs: rewrite README for manifest-driven bootstrap; drop legacy l
 
 **Files:** none new — publishes everything.
 
-- [ ] **Step 1: Final export catches any stragglers**
+- [x] **Step 1: Final export catches any stragglers**
 
 ```bash
 node tools/dotfiles.mjs export && node tools/dotfiles.mjs scan && git status --short
 ```
 Expected: scan clean; status empty or only expected changes (commit them with a conventional message if any).
 
-- [ ] **Step 2: Push**
+- [x] **Step 2: Push**
 
 ```bash
 git push origin main
 ```
 Expected: success. If rejected, `git pull --ff-only` and retry — never force.
 
-- [ ] **Step 3: Verify remote**
+- [x] **Step 3: Verify remote**
 
 ```bash
 git ls-remote --heads origin main
