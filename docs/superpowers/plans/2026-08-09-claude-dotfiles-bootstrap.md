@@ -667,7 +667,7 @@ Expected before commit: `git status` shows `home/hooks/dotfiles-drift.mjs` (new)
 - Consumes: `tools/dotfiles.mjs` CLI (`export`, `scan`) from Tasks 2-3.
 - Produces: user-invocable `/sync-dotfiles` skill.
 
-- [ ] **Step 1: Write `~/.claude/skills/sync-dotfiles/SKILL.md`**
+- [x] **Step 1: Write `~/.claude/skills/sync-dotfiles/SKILL.md`**
 
 ```markdown
 ---
@@ -699,7 +699,7 @@ Localização do repo: `$CLAUDE_DOTFILES_DIR` se definida, senão `~/dotfiles/cl
 - Mudança de plugin/marketplace já viaja dentro de `home/settings.json` (`enabledPlugins`); não existe manifest separado de plugins.
 ```
 
-- [ ] **Step 2: Add sync section to live `~/.claude/CLAUDE.md`**
+- [x] **Step 2: Add sync section to live `~/.claude/CLAUDE.md`**
 
 Append under the `# Convenções padrão (todos os projetos)` section (after the "Memory hygiene" subsection):
 
@@ -709,7 +709,7 @@ Append under the `# Convenções padrão (todos os projetos)` section (after the
 Config global do Claude (skills, agents, hooks, outcomes, settings, CLAUDE.md) é versionada em `LeonardoChiarelli/claude-dotfiles` (clone em `~/dotfiles/claude`). Depois de modificar qualquer um desses, rodar `/sync-dotfiles` pra exportar, revisar diff e commitar. O hook `dotfiles-drift.mjs` lembra quando esquecer. Máquina nova: clonar o repo e rodar `install.ps1` (Windows) ou `install.sh` (Unix).
 ```
 
-- [ ] **Step 3: Relocate rtk hook to the machine (so export owns it)**
+- [x] **Step 3: Relocate rtk hook to the machine (so export owns it)**
 
 The repo's old top-level `hooks/rtk-rewrite.sh` is referenced by `settings.local.json`'s rtk PreToolUse hook, but the file doesn't exist in `~/.claude/hooks/` on this machine. Copy it there so the mirror carries it:
 
@@ -719,7 +719,7 @@ cp hooks/rtk-rewrite.sh ~/.claude/hooks/rtk-rewrite.sh
 
 Then check whether the live `~/.claude/settings.local.json` references `rtk-rewrite` (`grep rtk-rewrite ~/.claude/settings.local.json || echo "not wired"`). If not wired, leave it — the installer wires it on fresh machines (Task 7); do not add machine-local wiring here.
 
-- [ ] **Step 4: Re-export, scan, commit**
+- [x] **Step 4: Re-export, scan, commit**
 
 ```bash
 node tools/dotfiles.mjs export

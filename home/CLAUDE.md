@@ -80,6 +80,10 @@ Ao final de cada sessão substantiva, atualizar os arquivos em `.claude/memory/`
 
 Memória não é changelog: não duplicar git log.
 
+## Dotfiles sync
+
+Config global do Claude (skills, agents, hooks, outcomes, settings, CLAUDE.md) é versionada em `LeonardoChiarelli/claude-dotfiles` (clone em `~/dotfiles/claude`). Depois de modificar qualquer um desses, rodar `/sync-dotfiles` pra exportar, revisar diff e commitar. O hook `dotfiles-drift.mjs` lembra quando esquecer. Máquina nova: clonar o repo e rodar `install.ps1` (Windows) ou `install.sh` (Unix).
+
 @RTK.md
 # graphify
 - **graphify** (`~/.claude/skills/graphify/SKILL.md`) - any input to knowledge graph. Trigger: `/graphify`
