@@ -92,6 +92,11 @@
             "type": "command",
             "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}\\hooks\\check-emdash.mjs\"",
             "statusMessage": "Checando copy pt-BR (em-dash)"
+          },
+          {
+            "type": "command",
+            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}\\hooks\\dotfiles-drift.mjs\"",
+            "statusMessage": "Checando drift de dotfiles"
           }
         ]
       },

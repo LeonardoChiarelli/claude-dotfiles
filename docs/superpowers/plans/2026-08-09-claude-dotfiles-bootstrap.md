@@ -566,7 +566,7 @@ git commit -m "feat: add roundtrip self-test (export -> install -> compare)"
 - Consumes: Claude Code PostToolUse hook stdin contract: `{ session_id, tool_input: { file_path } }`.
 - Produces: once per session, stdout JSON `{ systemMessage, hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext } }` when a write lands in a synced path under `~/.claude`. Always exits 0 (never blocks).
 
-- [ ] **Step 1: Write the hook at `~/.claude/hooks/dotfiles-drift.mjs`**
+- [x] **Step 1: Write the hook at `~/.claude/hooks/dotfiles-drift.mjs`**
 
 ```js
 #!/usr/bin/env node
@@ -611,7 +611,7 @@ process.stdin.on('end', () => {
 });
 ```
 
-- [ ] **Step 2: Wire it into live `~/.claude/settings.json`**
+- [x] **Step 2: Wire it into live `~/.claude/settings.json`**
 
 In `hooks.PostToolUse`, find the existing entry with `"matcher": "Edit|Write|MultiEdit"` (the check-emdash one) and append to its `hooks` array:
 
@@ -626,7 +626,7 @@ In `hooks.PostToolUse`, find the existing entry with `"matcher": "Edit|Write|Mul
 Validate after editing: `node -e "JSON.parse(require('fs').readFileSync(process.env.USERPROFILE + '/.claude/settings.json','utf8')); console.log('settings OK')"`
 Expected: `settings OK`
 
-- [ ] **Step 3: Test the hook contract**
+- [x] **Step 3: Test the hook contract**
 
 ```bash
 printf '{"session_id":"t1","tool_input":{"file_path":"%s"}}' "$HOME/.claude/skills/graphify/SKILL.md" | node ~/.claude/hooks/dotfiles-drift.mjs
@@ -643,7 +643,7 @@ rm -f "$TMPDIR/dotfiles-drift-t1" /tmp/dotfiles-drift-t1 2>/dev/null || true
 ```
 Expected: no output for either (outside `~/.claude`; memory path not watched).
 
-- [ ] **Step 4: Re-export and commit**
+- [x] **Step 4: Re-export and commit**
 
 ```bash
 node tools/dotfiles.mjs export
