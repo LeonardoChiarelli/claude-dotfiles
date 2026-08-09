@@ -146,6 +146,68 @@ function cmdExport() {
   }
 }
 
+// ── install: repo -> machine (merge, never delete machine-only files) ───────
+function cmdInstall() {
+  const files = listManifestFiles(HOME_MIRROR);
+  if (files.length === 0) {
+    console.error('install: home/ mirror is empty — run export first or check the clone');
+    process.exit(1);
+  }
+  for (const rel of files) {
+    const src = path.join(HOME_MIRROR, rel);
+    const dst = path.join(CLAUDE_HOME, rel);
+    if (manifest.templated.includes(rel)) {
+      if (fs.existsSync(dst) && !DRY) fs.copyFileSync(dst, dst + '.bak');
+      writeFile(dst, renderSettings(fs.readFileSync(src, 'utf8'), CLAUDE_HOME));
+      log('ok', `${rel} rendered${fs.existsSync(dst + '.bak') ? ' (backup: ' + rel + '.bak)' : ''}`);
+    } else {
+      copyFile(src, dst);
+    }
+  }
+  log('ok', `${files.length} files installed into ${CLAUDE_HOME}`);
+
+  if (fs.existsSync(MEMORY_MIRROR)) {
+    const memDst = memoryDir(CLAUDE_HOME);
+    const memFiles = walk(MEMORY_MIRROR);
+    for (const rel of memFiles) copyFile(path.join(MEMORY_MIRROR, rel), path.join(memDst, rel));
+    log('ok', `memory merged into ${memDst} (${memFiles.length} files; machine-only files kept)`);
+  }
+
+  if (!NO_MCP && fs.existsSync(path.join(REPO, 'mcp.json'))) {
+    const servers = JSON.parse(fs.readFileSync(path.join(REPO, 'mcp.json'), 'utf8'));
+    const existing = fs.existsSync(CLAUDE_JSON)
+      ? (JSON.parse(fs.readFileSync(CLAUDE_JSON, 'utf8')).mcpServers || {})
+      : {};
+    for (const [name, cfg] of Object.entries(servers)) {
+      if (existing[name]) { log('skip', `mcp ${name} already registered`); continue; }
+      const json = JSON.stringify(cfg);
+      if (json.includes('{{SECRET:')) {
+        log('warn', `mcp ${name} needs secrets filled in — register manually: claude mcp add-json ${name} '<json with secrets>' --scope user`);
+        continue;
+      }
+      if (DRY) { log('dry', `claude mcp add-json ${name}`); continue; }
+      const r = spawnSync('claude', ['mcp', 'add-json', name, json, '--scope', 'user'], {
+        shell: true, stdio: 'pipe', encoding: 'utf8',
+      });
+      if (r.status === 0) log('ok', `mcp ${name} registered`);
+      else log('warn', `mcp ${name} failed (${(r.stderr || '').trim() || 'claude CLI not found?'}) — run manually: claude mcp add-json ${name} '${json}' --scope user`);
+    }
+  }
+
+  // Plugins install themselves from settings.json; only warn about
+  // directory-source marketplaces that cannot exist on a fresh machine.
+  try {
+    const rendered = JSON.parse(renderSettings(
+      fs.readFileSync(path.join(HOME_MIRROR, 'settings.json'), 'utf8'), CLAUDE_HOME));
+    for (const [name, m] of Object.entries(rendered.extraKnownMarketplaces || {})) {
+      if (m.source?.source === 'directory' && !fs.existsSync(m.source.path)) {
+        log('warn', `marketplace ${name} uses a local directory source missing on this machine (${m.source.path}) — its plugins stay unavailable`);
+      }
+    }
+  } catch { /* settings unreadable — skip plugin note */ }
+  log('ok', 'plugins: declared in settings.json (enabledPlugins) — open Claude Code once and they auto-install');
+}
+
 // ── scan: heuristic secret scan over pending repo changes (or one file) ─────
 // Flags lines like `api_key = "abc123..."`: secret-ish keyword, then a long
 // value containing at least one digit (cuts code false-positives like
@@ -203,6 +265,7 @@ const positional = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 const cmd = positional[0];
 const commands = {
   export: cmdExport,
+  install: cmdInstall,
   scan: () => cmdScan(positional[1]),
 };
 if (!commands[cmd]) {

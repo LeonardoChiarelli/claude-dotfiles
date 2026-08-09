@@ -374,7 +374,7 @@ git commit -m "feat: manifest-driven export + secret scan; import current config
 - Consumes: everything from Task 2 (`listManifestFiles`, `copyFile`, `writeFile`, `renderSettings`, `memoryDir`, `walk`, constants, `NO_MCP`, `DRY`).
 - Produces: CLI `node tools/dotfiles.mjs install [--dry-run] [--no-mcp]`. Honors `CLAUDE_HOME` env override (used by roundtrip and the wrapper's dry-run tests).
 
-- [ ] **Step 1: Add `cmdInstall` (insert after `cmdExport`, before the scan section)**
+- [x] **Step 1: Add `cmdInstall` (insert after `cmdExport`, before the scan section)**
 
 ```js
 // ── install: repo -> machine (merge, never delete machine-only files) ───────
@@ -440,7 +440,7 @@ function cmdInstall() {
 }
 ```
 
-- [ ] **Step 2: Register the subcommand**
+- [x] **Step 2: Register the subcommand**
 
 In the `commands` object, add `install: cmdInstall,` so it reads:
 
@@ -452,7 +452,7 @@ const commands = {
 };
 ```
 
-- [ ] **Step 3: Test install into a temp CLAUDE_HOME**
+- [x] **Step 3: Test install into a temp CLAUDE_HOME**
 
 ```bash
 TMPHOME=$(mktemp -d)
@@ -464,7 +464,7 @@ rm -rf "$TMPHOME"
 ```
 Expected: skills/agents listed; `tokens-left=1` (grep found 0 tokens → exit 1, meaning every token was rendered); `valid JSON` (rendered paths are correctly JSON-escaped — invalid escaping would make parse throw).
 
-- [ ] **Step 4: Test `--dry-run` makes no writes**
+- [x] **Step 4: Test `--dry-run` makes no writes**
 
 ```bash
 TMPHOME=$(mktemp -d)
@@ -474,7 +474,7 @@ rm -rf "$TMPHOME"
 ```
 Expected: `[dry] ...` lines only; final count `0` (nothing written).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add tools/dotfiles.mjs
