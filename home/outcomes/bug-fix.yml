@@ -1,0 +1,43 @@
+name: bug-fix
+when: corrigindo bug reportado ou descoberto, ao fechar uma issue ou regressão
+applies_to: qualquer fix de comportamento incorreto, regression, ou falha de produção
+
+criteria:
+  - id: reproduction
+    desc: bug reproduzível antes do fix; teste novo que falha sem o fix e passa com ele, cobrindo o cenário exato que disparou o bug
+    weight: 3
+  - id: root_cause
+    desc: |
+      causa raiz identificada e documentada (não só sintoma tratado); 5 whys aplicado quando relevante.
+      Workaround temporário deve estar marcado e ter issue de follow-up
+    weight: 3
+  - id: regression
+    desc: nenhuma feature já estável quebra; suite de testes passa, type-check sem novos erros
+    weight: 3
+  - id: scope_discipline
+    desc: o diff resolve apenas o bug em questão; refactors não relacionados ficam fora; sem mudanças oportunistas
+    weight: 2
+  - id: gotcha_recorded
+    desc: |
+      se a causa não era óbvia ou o bug tem chance de voltar (race condition, contrato externo,
+      comportamento contraintuitivo), registrar em .claude/memory/gotchas.md com causa, fix e prevenção
+    weight: 2
+
+pass_threshold: 80
+
+examples:
+  approved: |
+    Bug: webhook de pagamento processado duas vezes em retentativa.
+    Fix: adiciona constraint UNIQUE no identificador de evento externo + check antes do insert + teste de retentativa.
+    Mensagem de commit explica a causa. Gotcha registrado: 'provider reenvia webhook em retry com backoff exponencial'.
+
+  needs_work: |
+    Bug: input com valor-limite (ex. 0) crashava.
+    Fix: try/catch silencioso, sem teste, sem gotcha, refatorou módulo inteiro 'aproveitando'.
+    Problema: causa não tratada (validar input no entry point), scope creep, sem regression test, erro silenciado sem entender a causa.
+
+blocker_findings:
+  - sem teste que reproduz o bug
+  - fix trata sintoma, não causa
+  - escopo do diff muito maior que o bug
+  - erro silenciado sem entender a causa

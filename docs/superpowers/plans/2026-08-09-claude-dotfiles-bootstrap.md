@@ -114,7 +114,7 @@ git commit -m "feat: add sync manifest, stop ignoring memory/"
 - Consumes: `manifest.json` (Task 1 schema).
 - Produces: CLI `node tools/dotfiles.mjs export [--dry-run]` and `node tools/dotfiles.mjs scan [file]`. Internal functions later tasks extend: `listManifestFiles(root)`, `walk(root)`, `excluded(relPath)`, `sanitizeSettings(raw, claudeHome)`, `tokenPairs(claudeHome)`, `copyFile(src, dst)`, `projectKey(p)`, `memoryDir(claudeHome)`, `log(tag, msg)`, constants `REPO`, `CLAUDE_HOME`, `CLAUDE_JSON`, `HOME_MIRROR`, `MEMORY_MIRROR`, `DRY`, `manifest`. Env overrides `CLAUDE_HOME` / `CLAUDE_JSON` exist for testing.
 
-- [ ] **Step 1: Write `tools/dotfiles.mjs`**
+- [x] **Step 1: Write `tools/dotfiles.mjs`**
 
 ```js
 #!/usr/bin/env node
@@ -325,29 +325,29 @@ if (!commands[cmd]) {
 commands[cmd]();
 ```
 
-- [ ] **Step 2: Dry-run and inspect the plan**
+- [x] **Step 2: Dry-run and inspect the plan**
 
 Run: `node tools/dotfiles.mjs export --dry-run`
 Expected: many `[dry] copy ...` lines covering `CLAUDE.md`, `RTK.md`, `skills/`, `agents/`, `hooks/`, `outcomes/`; a `[dry] write ...settings.json` line; memory lines; NO line mentioning `settings.local.json`, `node_modules`, or `.doctor-bak`.
 
-- [ ] **Step 3: Real export**
+- [x] **Step 3: Real export**
 
 Run: `node tools/dotfiles.mjs export`
 Expected: `[ok] home/ mirrored (N files)` (N ≈ 60+, includes 17 agents + hooks + skills), `[ok] memory/ mirrored (10 files)`, `[ok] mcp.json generated (4 servers)`.
 
-- [ ] **Step 4: Verify tokenization and mcp.json**
+- [x] **Step 4: Verify tokenization and mcp.json**
 
 Run: `grep -c '{{CLAUDE_HOME}}' home/settings.json && grep -c 'C:\\\\Users' home/settings.json; echo "exit=$?"`
 Expected: first count ≥ 10; second grep finds 0 (non-zero exit) — no literal machine paths remain.
 Run: `node -e "const m=require('./mcp.json'); console.log(Object.keys(m).sort().join(','))"`
 Expected: `context7,neon,playwright,sentry`
 
-- [ ] **Step 5: Secret scan**
+- [x] **Step 5: Secret scan**
 
 Run: `node tools/dotfiles.mjs scan`
 Expected: `scan: clean` (if it flags lines, review each one — memory/config on this machine is expected to be clean; a false positive means the regex needs the exclusion added, a true positive means STOP and remove the secret from the live config first).
 
-- [ ] **Step 6: Scan self-test with a planted secret**
+- [x] **Step 6: Scan self-test with a planted secret**
 
 ```bash
 printf 'aws_secret_key = "AKIA1234567890ABCDEF12"\n' > /tmp/fake-secret.txt
@@ -356,7 +356,7 @@ rm /tmp/fake-secret.txt
 ```
 Expected: `POSSIBLE SECRETS FOUND...` and `exit=1`.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add tools/dotfiles.mjs home memory mcp.json

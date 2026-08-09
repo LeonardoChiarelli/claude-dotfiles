@@ -1,0 +1,58 @@
+name: code-review
+when: antes de commit substantivo ou abertura de PR
+applies_to: qualquer mudança de código que não seja trivial (typo, format)
+
+criteria:
+  - id: tests
+    desc: |
+      cobertura proporcional ao diff, casos de borda e cenários de erro incluídos;
+      mocks apenas no boundary externo (APIs de terceiros, e-mail, pagamento; nunca o DB);
+      sem .only/skip novos
+    weight: 3
+  - id: security
+    desc: |
+      sem segredos hardcoded; validação de schema (Zod ou equivalente) em todo input externo
+      (API, webhook, output de LLM); queries parametrizadas (sem string interpolation em SQL);
+      auth check em rotas privadas; rate limiting em rotas públicas; nenhum secret de servidor
+      exposto no client; SDKs externos (LLM, pagamento) só atrás de interface dedicada
+    weight: 3
+  - id: server_client
+    desc: server-first; marcação de client (ex. "use client") apenas onde há interatividade real (state, scroll, animação, context client)
+    weight: 2
+  - id: readability
+    desc: nomes claros, funções pequenas com responsabilidade única, sem código morto, sem comentário óbvio ou redundante
+    weight: 2
+  - id: copy
+    desc: copy pt-BR limpo e coloquial profissional; sem `—` como conector de frase; plural ("nós") na voz do produto; sem string de UI hardcoded em outro idioma
+    weight: 2
+  - id: consistency
+    desc: segue as convenções do projeto (CLAUDE.md e memória de patterns); padrões de estado, acesso a dados e eventos consistentes; idempotência em jobs/webhooks
+    weight: 2
+
+pass_threshold: 80
+
+examples:
+  approved: |
+    Diff que adiciona rota privada nova com:
+    - auth/session check
+    - schema validando o body
+    - persistência via query parametrizada
+    - evento de telemetria com naming convention
+    - teste cobrindo happy path + 401 + body inválido
+    - sem console.log e sem `—` no copy
+
+  needs_work: |
+    Diff que adiciona route handler que:
+    - importa SDK externo direto em vez de usar a interface dedicada
+    - persiste via SQL string concat (vetor de injection)
+    - sem teste
+    - loga input do usuário com console.log
+    - usa marcação de client sem interatividade real
+    - string de UI em outro idioma ("Loading...")
+
+blocker_findings:
+  - segredo hardcoded
+  - vetor de SQL injection
+  - SDK externo (LLM/pagamento) usado fora da interface dedicada
+  - rota privada sem auth check
+  - LLM chamado direto do client

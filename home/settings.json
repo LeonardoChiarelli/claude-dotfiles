@@ -1,0 +1,197 @@
+{
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "permissions": {
+    "allow": [],
+    "defaultMode": "bypassPermissions"
+  },
+  "model": "claude-fable-5[1m]",
+  "skillOverrides": {
+    "find-skills": "off",
+    "stripe-projects": "off",
+    "upgrade-stripe": "off",
+    "two-axis-review": "off",
+    "marketing-skills:ab-testing": "off",
+    "marketing-skills:ad-creative": "off",
+    "marketing-skills:aso": "off",
+    "marketing-skills:churn-prevention": "off",
+    "marketing-skills:co-marketing": "off",
+    "marketing-skills:community-marketing": "off",
+    "marketing-skills:competitor-profiling": "off",
+    "marketing-skills:competitors": "off",
+    "marketing-skills:customer-research": "off",
+    "marketing-skills:directory-submissions": "off",
+    "marketing-skills:emails": "off",
+    "marketing-skills:free-tools": "off",
+    "marketing-skills:image": "off",
+    "marketing-skills:launch": "off",
+    "marketing-skills:marketing-ideas": "off",
+    "marketing-skills:marketing-plan": "off",
+    "marketing-skills:marketing-psychology": "off",
+    "marketing-skills:offers": "off",
+    "marketing-skills:onboarding": "off",
+    "marketing-skills:paywalls": "off",
+    "marketing-skills:popups": "off",
+    "marketing-skills:programmatic-seo": "off",
+    "marketing-skills:referrals": "off",
+    "marketing-skills:revops": "off",
+    "marketing-skills:signup": "off",
+    "marketing-skills:sms": "off",
+    "marketing-skills:video": "off"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}\\hooks\\guard-edits.mjs\"",
+            "statusMessage": "Verificando proteção de .env"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}\\hooks\\guard-source-footage.mjs\"",
+            "statusMessage": "Verificando proteção de footage/"
+          },
+          {
+            "type": "command",
+            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}\\hooks\\validate-manifest.mjs\"",
+            "statusMessage": "Validando manifest.json"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}\\hooks\\guard-source-footage.mjs\"",
+            "statusMessage": "Verificando proteção de footage/ (ffmpeg)"
+          },
+          {
+            "type": "command",
+            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}\\hooks\\ffmpeg-safety.mjs\"",
+            "statusMessage": "Verificando segurança do ffmpeg"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}\\hooks\\check-emdash.mjs\"",
+            "statusMessage": "Checando copy pt-BR (em-dash)"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}\\hooks\\auto-ffprobe.mjs\"",
+            "statusMessage": "auto-ffprobe: verificando saída de vídeo"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}\\hooks\\lint-hyperframes.mjs\"",
+            "statusMessage": "lint-hyperframes: verificando composição"
+          },
+          {
+            "type": "command",
+            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}\\hooks\\caption-readability.mjs\"",
+            "statusMessage": "caption-readability: verificando legenda ASS"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"C:/Program Files/nodejs/node.exe\" \"C:/Users/Leonardo/.claude/hooks/context-mode-cache-heal.mjs\""
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \"{{CLAUDE_HOME}}\\hooks\\caveman-statusline.ps1\""
+  },
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": false,
+    "caveman@caveman": true,
+    "context-mode@context-mode": true,
+    "claude-code-setup@claude-plugins-official": false,
+    "engineering@cowork-roles": false,
+    "design@cowork-roles": false,
+    "marketing@cowork-roles": false,
+    "sales@cowork-roles": false,
+    "product-management@cowork-roles": false,
+    "searchfit-seo@cowork-roles": false,
+    "cowork-plugin-management@cowork-roles": false,
+    "plugin-dev@claude-plugins-official": false,
+    "code-simplifier@claude-plugins-official": false,
+    "agent-sdk-dev@claude-plugins-official": false,
+    "claude-md-management@claude-plugins-official": false,
+    "vercel@claude-plugins-official": true,
+    "marketing-skills@marketingskills": true
+  },
+  "extraKnownMarketplaces": {
+    "caveman": {
+      "source": {
+        "source": "github",
+        "repo": "JuliusBrussee/caveman"
+      }
+    },
+    "context-mode": {
+      "source": {
+        "source": "github",
+        "repo": "mksglu/context-mode"
+      }
+    },
+    "cowork-roles": {
+      "source": {
+        "source": "directory",
+        "path": "{{CLAUDE_HOME}}\\plugins\\marketplaces\\cowork-roles"
+      }
+    },
+    "marketingskills": {
+      "source": {
+        "source": "github",
+        "repo": "coreyhaines31/marketingskills"
+      }
+    }
+  },
+  "language": "Portuguese(Brazil)",
+  "effortLevel": "xhigh",
+  "askUserQuestionTimeout": "never",
+  "autoUpdatesChannel": "latest",
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "dark",
+  "editorMode": "vim",
+  "switchModelsOnFlag": false,
+  "terminalProgressBarEnabled": true,
+  "remoteControlAtStartup": false,
+  "inputNeededNotifEnabled": true,
+  "agentPushNotifEnabled": true
+}

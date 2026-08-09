@@ -1,0 +1,68 @@
+name: feature
+when: entregando feature nova (mudança que adiciona capacidade ao produto), não rascunho/MVP interno
+applies_to: features especificadas e features pós-MVP
+
+criteria:
+  - id: spec_aligned
+    desc: feature implementa o que foi acordado (PRD, design spec, conversa registrada); escopo correto, sem features fantasma; decisões fora do escopo justificadas em .claude/memory/decisions.md
+    weight: 3
+  - id: telemetry
+    desc: |
+      eventos de telemetria relevantes à feature instrumentados com naming convention;
+      erros capturados com contexto (user_id, feature, request_id);
+      custo de IA logado se a feature chama LLM
+    weight: 2
+  - id: tests
+    desc: happy path testado, casos de borda principais cobertos, e2e se a feature toca múltiplas camadas
+    weight: 2
+  - id: server_client
+    desc: server-first; marcação de client (ex. "use client") justificada se houver
+    weight: 2
+  - id: ux_quality
+    desc: |
+      mobile-responsive verificado (DevTools mobile + browser real);
+      copy pt-BR coloquial profissional, sem `—` como conector de frase;
+      loading states / skeleton screens em ações com latência > 200ms;
+      foco na 'próxima ação clara'
+    weight: 2
+  - id: i18n
+    desc: copy visível externalizado (ex. messages/), sem string de UI hardcoded; idiomas adicionais (EN/ES) quando aplicável
+    weight: 2
+  - id: a11y
+    desc: alt em imagens, hierarquia de heading correta, foco visível, contraste mínimo
+    weight: 2
+  - id: ai_contracts
+    desc: |
+      se a feature usa IA: SDK abstraído atrás de interface dedicada, validação de schema aplicada,
+      idempotência, custo dentro do budget definido, prompt caching quando aplicável
+    weight: 2
+  - id: deploy_ready
+    desc: env vars novas registradas em .env.example, migrations geradas se o schema mudou, sem placeholder esquecido, build de produção checado
+    weight: 3
+
+pass_threshold: 80
+
+examples:
+  approved: |
+    Feature nova alinhada à spec:
+    - escopo completo, decisões fora do acordado registradas
+    - eventos de telemetria com props completas
+    - mobile-responsive testado em device real
+    - copy i18n (sem string hardcoded), alt em todas as imagens
+    - teste unit da lógica + e2e do fluxo principal
+    - env vars registradas, build de produção verde
+
+  needs_work: |
+    Feature entregue parcialmente:
+    - parte do escopo não implementada e sem feature flag
+    - eventos de telemetria faltando
+    - copy hardcoded ou em outro idioma (ex. pt-PT)
+    - sem skeleton em carregamento com latência
+    - env var nova não registrada, build de produção não checado
+
+blocker_findings:
+  - feature parcialmente entregue sem feature flag
+  - eventos de telemetria faltando
+  - copy fora de pt-BR ou hardcoded
+  - sem teste do happy path
+  - env var nova não registrada

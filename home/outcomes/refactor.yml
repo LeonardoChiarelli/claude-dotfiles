@@ -1,0 +1,51 @@
+name: refactor
+when: melhorando estrutura/clareza sem mudar comportamento
+applies_to: refactor puro (rename, extract, inline, move file, dedupe), não inclui mudança funcional
+
+criteria:
+  - id: behavior_preserved
+    desc: comportamento observável idêntico antes/depois; suite de testes existente passa sem alteração de assertions
+    weight: 3
+  - id: scope_discipline
+    desc: refactor focado em um objetivo claro (extrair helper, renomear módulo, deduplicar); não mistura com bug fix ou feature; commit/PR contém só refactor
+    weight: 3
+  - id: justification
+    desc: refactor tem motivo claro (reduzir duplicação, alinhar com pattern, prep para feature próxima); não é mexer por mexer
+    weight: 2
+  - id: smaller_diff
+    desc: diff resulta em menos código, ou mesma quantidade com mais clareza; refactor que cresce o código exige justificativa
+    weight: 2
+  - id: tests_unchanged
+    desc: testes existentes ainda fazem sentido sem reescrita; se precisaram ser reescritos, o comportamento provavelmente mudou (reclassificar como feature)
+    weight: 2
+  - id: pattern_alignment
+    desc: |
+      resultado alinha com .claude/memory/patterns.md;
+      se introduz padrão novo, atualiza patterns.md no mesmo PR; não cria abstração para futuro hipotético
+      (3 instâncias antes de extrair helper)
+    weight: 2
+  - id: cost_benefit
+    desc: ganho (legibilidade, dedupe, performance medida) supera custo (risco de regressão, tempo de review)
+    weight: 1
+
+pass_threshold: 75
+
+examples:
+  approved: |
+    Extrai helper duplicado em 4 lugares para um módulo compartilhado.
+    Comportamento idêntico. Mesmos testes passando. Diff diminui linhas.
+    Atualiza patterns.md com exemplo de uso.
+
+  needs_work: |
+    PR 'refactor: limpa código antigo' que:
+    - renomeia 12 arquivos
+    - adiciona feature de retry em uma função
+    - introduz abstração nova (ex. Repository) para 2 queries
+    - quebra/reescreve testes (modificou assertions)
+    Problema: scope misturado, comportamento mudou, abstração prematura, sem justificativa específica.
+
+blocker_findings:
+  - testes alterados (não só renomeados)
+  - mistura refactor com feature/fix no mesmo commit
+  - introduz pattern novo sem documentar em patterns.md
+  - abstração prematura para futuro hipotético
