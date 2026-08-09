@@ -1,0 +1,16 @@
+{
+  "include": [
+    "CLAUDE.md",
+    "RTK.md",
+    "settings.json",
+    "keybindings.json",
+    "skills",
+    "agents",
+    "hooks",
+    "outcomes"
+  ],
+  "excludeSegments": ["node_modules", "__pycache__", ".git"],
+  "excludeBasenames": ["settings.local.json", ".DS_Store", "Thumbs.db"],
+  "excludeBasenameContains": [".doctor-bak", ".bak", ".original.md"],
+  "templated": ["settings.json"]
+}

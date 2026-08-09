@@ -59,7 +59,7 @@ Obsolete root-level files (`CLAUDE.md`, `settings.json`, `skills/`, `hooks/`) ar
 **Interfaces:**
 - Produces: `manifest.json` schema consumed by `tools/dotfiles.mjs` (Tasks 2-4): `{ include: string[], excludeSegments: string[], excludeBasenames: string[], excludeBasenameContains: string[], templated: string[] }`. Paths in `include`/`templated` are relative to `~/.claude` (and to `home/` in the repo).
 
-- [ ] **Step 1: Write `manifest.json`**
+- [x] **Step 1: Write `manifest.json`**
 
 ```json
 {
@@ -82,7 +82,7 @@ Obsolete root-level files (`CLAUDE.md`, `settings.json`, `skills/`, `hooks/`) ar
 
 Notes: `keybindings.json` doesn't exist on this machine — export skips missing includes silently (that's by design, keep it listed). `.original.md` excludes caveman-compress backups.
 
-- [ ] **Step 2: Rewrite `.gitignore`**
+- [x] **Step 2: Rewrite `.gitignore`**
 
 The current `.gitignore` ignores `memory/` and a pile of `~/.claude` junk that made sense when the repo was symlink-targeted. The manifest include-list now controls what enters the repo, so the ignore file shrinks to:
 
@@ -90,12 +90,12 @@ The current `.gitignore` ignores `memory/` and a pile of `~/.claude` junk that m
 *.bak
 ```
 
-- [ ] **Step 3: Verify manifest parses**
+- [x] **Step 3: Verify manifest parses**
 
 Run: `node -e "const m=require('./manifest.json'); if(!Array.isArray(m.include)||!m.include.includes('skills')) process.exit(1); console.log('manifest OK:', m.include.length, 'includes')"`
 Expected: `manifest OK: 8 includes`
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add manifest.json .gitignore
