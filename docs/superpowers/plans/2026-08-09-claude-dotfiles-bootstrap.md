@@ -912,14 +912,14 @@ git commit -m "refactor: installers delegate config to dotfiles.mjs, keep toolch
 **Interfaces:**
 - Consumes: everything built in Tasks 1-7 (documents it).
 
-- [ ] **Step 1: Delete obsolete files**
+- [x] **Step 1: Delete obsolete files**
 
 ```bash
 git rm -r CLAUDE.md settings.json skills hooks
 ```
 (The live copies already exist under `~/.claude` and are mirrored in `home/`; `hooks/rtk-rewrite.sh` was relocated in Task 6.)
 
-- [ ] **Step 2: Rewrite `README.md`**
+- [x] **Step 2: Rewrite `README.md`**
 
 ```markdown
 # claude-dotfiles
@@ -978,7 +978,7 @@ install.ps1 / install.sh
 `node tools/dotfiles.mjs roundtrip` — exporta, instala num dir temporário e compara byte a byte (templados comparados na forma tokenizada). `OK` = os dois caminhos funcionam.
 ```
 
-- [ ] **Step 3: Full verification pass**
+- [x] **Step 3: Full verification pass**
 
 ```bash
 node tools/dotfiles.mjs roundtrip
@@ -987,7 +987,7 @@ bash -n install.sh
 ```
 Expected: `roundtrip: OK ...`, `scan: clean`, silêncio do bash -n.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add README.md

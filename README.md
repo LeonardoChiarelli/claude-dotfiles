@@ -1,14 +1,8 @@
 # claude-dotfiles
 
-Claude Code global config — skills, CLAUDE.md, bootstrap script.
+Bootstrap completo da minha config do Claude Code: skills, agents, hooks, outcomes, settings, plugins, MCP servers e memória persistente. Um clone + um comando reproduzem o setup inteiro em qualquer máquina.
 
-## Setup on a new machine
-
-**macOS / Linux:**
-```bash
-git clone git@github.com:LeonardoChiarelli/claude-dotfiles.git ~/dotfiles/claude
-bash ~/dotfiles/claude/install.sh
-```
+## Máquina nova
 
 **Windows (PowerShell 7+):**
 ```powershell
@@ -16,57 +10,45 @@ git clone https://github.com/LeonardoChiarelli/claude-dotfiles.git $HOME\dotfile
 pwsh -File $HOME\dotfiles\claude\install.ps1
 ```
 
-That's it. Both scripts do the same thing for their platform:
-1. Link/copy `~/.claude/skills` and `~/.claude/CLAUDE.md` from this repo
-   - Unix symlinks; Windows copies (symlinks need admin/Developer Mode) — re-run after `git pull` to refresh
-2. Create or **merge** `~/.claude/settings.json` from the template (preserves existing keys)
-3. Install `jq` + `rtk` (Homebrew/apt/dnf/pacman/cargo on Unix, winget/cargo on Windows) and configure the PreToolUse hook in `settings.local.json`
-4. Install the `caveman` plugin for Claude Code
-5. Print instructions for the `context-mode` plugin (requires Claude Code UI)
-
-### Cross-platform notes
-- The rtk hook (`hooks/rtk-rewrite.sh`) is a single Bash script used on every OS. On Windows it runs through **Git Bash**, so Git for Windows must be installed.
-- `jq` and `rtk` are required for the hook to actually rewrite commands; if either is missing the hook degrades to a no-op (no errors).
-
-## Manual step after install
-
-Inside Claude Code:
-```
-/plugin marketplace add mksglu/context-mode
-/plugin install context-mode@context-mode
-```
-Restart Claude Code after.
-
-## What each tool does
-
-| Tool | Benefit | Scope |
-|------|---------|-------|
-| `rtk` | 60-90% token reduction on CLI commands (ls, git, pytest...) | Hook-based, transparent |
-| `caveman` | ~75% output token reduction, terse responses | Claude Code plugin |
-| `context-mode` | 98% tool output reduction + session continuity via MCP | Claude Code plugin |
-
-## File layout
-
-```
-claude-dotfiles/
-├── install.sh          # bootstrap script (macOS / Linux)
-├── install.ps1         # bootstrap script (Windows / PowerShell 7+)
-├── settings.json       # template (no machine-specific paths)
-│                       # settings.local.json lives per-machine, not versioned
-├── CLAUDE.md           # global Claude instructions
-├── hooks/
-│   └── rtk-rewrite.sh  # rtk PreToolUse hook (Bash; runs via Git Bash on Windows)
-├── skills/
-│   ├── find-skills/
-│   ├── graphify/
-│   └── caveman/        # populated after first install
-└── .gitignore
+**macOS / Linux:**
+```bash
+git clone https://github.com/LeonardoChiarelli/claude-dotfiles.git ~/dotfiles/claude
+bash ~/dotfiles/claude/install.sh
 ```
 
-## Adding skills
+Pré-requisitos: git + Node.js. O installer:
+1. Copia `home/` → `~/.claude` seguindo `manifest.json` e renderiza `settings.json` (tokens `{{CLAUDE_HOME}}`/`{{NODE}}` → paths da máquina; backup `.bak` se já existir)
+2. Faz merge de `memory/` → `~/.claude/projects/<key>/memory` (nunca apaga arquivo só-local)
+3. Registra MCP servers de `mcp.json` via `claude mcp add-json` (OAuth autentica no primeiro uso)
+4. Instala jq + rtk e configura o hook rtk em `settings.local.json` (machine-local)
+5. Plugins: nada a fazer — `settings.json` traz `enabledPlugins` + `extraKnownMarketplaces`; abra o Claude Code uma vez e eles se instalam sozinhos
 
-Drop the skill folder inside `skills/` and commit. All machines will get it on next `git pull`.
+`--dry-run` (sh) / `-DryRun` (ps1) mostra o plano sem executar.
 
-## Machine-specific permissions
+## Dia a dia (sync máquina → repo)
 
-Machine-specific `allow` permissions (e.g., venv paths) go in `~/.claude/settings.local.json`, which is gitignored. The versioned `settings.json` only contains portable settings (plugins, effortLevel, editorMode).
+Mudou skill/hook/agent/settings? Roda `/sync-dotfiles` dentro do Claude Code. Ele exporta pelo manifest, roda scan de segredos, mostra o diff e commita + pusha. O hook `dotfiles-drift.mjs` lembra você quando detectar mudança não sincronizada (1x por sessão).
+
+Manual, sem Claude: `node tools/dotfiles.mjs export && node tools/dotfiles.mjs scan`, depois `git add -A && git commit && git push`.
+
+## Layout
+
+```
+manifest.json   # o que sincroniza (única fonte de verdade)
+home/           # espelho 1:1 de ~/.claude (settings.json tokenizado)
+memory/         # espelho da memória persistente
+mcp.json        # MCP servers user-scope, sem segredos (gerado)
+tools/dotfiles.mjs  # export | install | scan | roundtrip
+install.ps1 / install.sh
+```
+
+## Regras
+
+- `settings.local.json` NUNCA entra no repo (permissions/hooks machine-local).
+- `home/settings.json` fica tokenizado; paths reais só existem em `~/.claude`.
+- Segredo detectado pelo scan aborta o commit. Sem exceção sem revisão humana.
+- Marketplace com source `directory` (ex.: cowork-roles) não é reproduzível de GitHub — o installer avisa e segue.
+
+## Testes
+
+`node tools/dotfiles.mjs roundtrip` — exporta, instala num dir temporário e compara byte a byte (templados comparados na forma tokenizada). `OK` = os dois caminhos funcionam.
