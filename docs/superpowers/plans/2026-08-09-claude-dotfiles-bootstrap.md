@@ -741,7 +741,7 @@ Expected new files in `home/`: `skills/sync-dotfiles/SKILL.md`, `hooks/rtk-rewri
 - Consumes: `node tools/dotfiles.mjs install [--dry-run]` (Task 3).
 - Produces: one-command bootstrap per platform. Keeps from the old scripts: `pkg_install`/jq/rtk install logic, `$LocalBin` PATH handling (ps1), rtk PreToolUse wiring into `settings.local.json`. Drops: manual skills/CLAUDE.md/settings copying (now `dotfiles.mjs install`), caveman curl install and context-mode manual instructions (both auto-install via `enabledPlugins` in settings.json).
 
-- [ ] **Step 1: Rewrite `install.sh`**
+- [x] **Step 1: Rewrite `install.sh`**
 
 ```bash
 #!/usr/bin/env bash
@@ -834,7 +834,7 @@ echo "    2. MCP servers with OAuth (sentry, neon, context7) authenticate on fir
 echo "    3. Check output above for any [warn] lines."
 ```
 
-- [ ] **Step 2: Rewrite `install.ps1`**
+- [x] **Step 2: Rewrite `install.ps1`**
 
 Keep these blocks from the current file VERBATIM (they are already correct): `Get-BashPath`, `$LocalBin`/`Add-UserPath`, the jq winget block (section 5), the rtk release-download block (`Install-RtkWindows`, section 6), and the `settings.local.json` rtk-hook merge block (section 8, including its `$hookEntry` construction). Replace the rest so the file becomes:
 
@@ -884,17 +884,17 @@ Write-Host "    3. Check output above for any [warn] lines."
 
 The `# <KEEP: ...>` markers mean: paste the exact block from the pre-rewrite `install.ps1` (visible in `git show HEAD:install.ps1`) at that position. They are content-preservation instructions for the implementer, not placeholders to leave in the file.
 
-- [ ] **Step 3: Test the Windows wrapper dry-run**
+- [x] **Step 3: Test the Windows wrapper dry-run**
 
 Run: `$env:CLAUDE_HOME = (New-Item -ItemType Directory -Force (Join-Path $env:TEMP 'cdtest')).FullName; pwsh -File install.ps1 -DryRun; Remove-Item -Recurse -Force $env:CLAUDE_HOME; Remove-Item Env:CLAUDE_HOME`
 Expected: `[dry] ...` lines from dotfiles.mjs, then `[warn] dry-run: stopping before toolchain install`, exit without touching jq/rtk.
 
-- [ ] **Step 4: Sanity-check bash syntax**
+- [x] **Step 4: Sanity-check bash syntax**
 
 Run: `bash -n install.sh`
 Expected: no output, exit 0.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add install.sh install.ps1

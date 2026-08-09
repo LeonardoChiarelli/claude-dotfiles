@@ -1,27 +1,30 @@
 # Claude Code dotfiles bootstrap — Windows (PowerShell 7+)
-# Run this on any new Windows machine:
 #   git clone https://github.com/LeonardoChiarelli/claude-dotfiles.git $HOME\dotfiles\claude
-#   pwsh -File $HOME\dotfiles\claude\install.ps1
-#
-# This is the Windows counterpart to install.sh. It mirrors the same steps but
-# COPIES files instead of symlinking (Windows symlinks require admin/Developer
-# Mode), installs jq via winget and rtk via its installer, and wires the rtk
-# PreToolUse hook through Git Bash.
+#   pwsh -File $HOME\dotfiles\claude\install.ps1 [-DryRun]
+param([switch]$DryRun)
 
 $ErrorActionPreference = 'Stop'
-
 $DotfilesDir = $PSScriptRoot
-$ClaudeDir   = Join-Path $HOME '.claude'
+$ClaudeDir   = if ($env:CLAUDE_HOME) { $env:CLAUDE_HOME } else { Join-Path $HOME '.claude' }
 
 function Write-Step($msg) { Write-Host $msg -ForegroundColor Cyan }
 function Write-Ok($msg)   { Write-Host "[ok]   $msg" -ForegroundColor Green }
 function Write-Skip($msg) { Write-Host "[skip] $msg" -ForegroundColor DarkGray }
 function Write-Warn2($msg){ Write-Host "[warn] $msg" -ForegroundColor Yellow }
 
+if (-not (Get-Command git  -ErrorAction SilentlyContinue)) { throw "git is required" }
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) { throw "Node.js is required: https://nodejs.org" }
+
 Write-Step "==> Claude dotfiles bootstrap (Windows)"
 Write-Host "    Dotfiles: $DotfilesDir"
 Write-Host "    Target:   $ClaudeDir"
 Write-Host ""
+
+# ── 1. Config, memory, MCP — manifest-driven ──────────────────────────────
+$dryArg = if ($DryRun) { '--dry-run' } else { $null }
+& node (Join-Path $DotfilesDir 'tools\dotfiles.mjs') install $dryArg
+if ($LASTEXITCODE -ne 0) { throw "dotfiles.mjs install failed" }
+if ($DryRun) { Write-Warn2 "dry-run: stopping before toolchain install"; exit 0 }
 
 # Resolve a bash.exe for hook + remote-script execution (Git Bash preferred).
 function Get-BashPath {
@@ -49,78 +52,12 @@ function Add-UserPath($dir) {
     return $false
 }
 
-# ── 1. Create ~/.claude if missing ────────────────────────────────────────
+# ── 2. Dirs + user PATH for portable tools ────────────────────────────────
 New-Item -ItemType Directory -Force -Path $ClaudeDir | Out-Null
 New-Item -ItemType Directory -Force -Path $LocalBin  | Out-Null
 if (Add-UserPath $LocalBin) { Write-Ok "added $LocalBin to user PATH" }
 
-# ── 2. Sync skills (copy — preserves any pre-existing skill/symlink) ───────
-$skillsTarget = Join-Path $ClaudeDir 'skills'
-New-Item -ItemType Directory -Force -Path $skillsTarget | Out-Null
-Get-ChildItem -Directory (Join-Path $DotfilesDir 'skills') | ForEach-Object {
-    $target = Join-Path $skillsTarget $_.Name
-    if (Test-Path $target) {
-        Write-Skip "~/.claude/skills/$($_.Name) already exists"
-    } else {
-        Copy-Item -Recurse -Path $_.FullName -Destination $target
-        Write-Ok "~/.claude/skills/$($_.Name) installed"
-    }
-}
-
-# ── 3. Install CLAUDE.md (symlink if allowed, else copy) ──────────────────
-$claudeMdSrc    = Join-Path $DotfilesDir 'CLAUDE.md'
-$claudeMdTarget = Join-Path $ClaudeDir   'CLAUDE.md'
-function Install-Linked($src, $target, $label) {
-    if (Test-Path $target) {
-        $existing = Get-Item $target
-        if ($existing.LinkType -eq 'SymbolicLink') { Write-Skip "$label already symlinked"; return }
-        $bak = "$target.bak"
-        Write-Warn2 "$label exists — backing up to $bak"
-        Move-Item -Force $target $bak
-    }
-    try {
-        New-Item -ItemType SymbolicLink -Path $target -Target $src -ErrorAction Stop | Out-Null
-        Write-Ok "$label -> $src (symlink)"
-    } catch {
-        Copy-Item -Force $src $target
-        Write-Ok "$label copied (symlink needs admin/Developer Mode; re-run after 'git pull' to refresh)"
-    }
-}
-Install-Linked $claudeMdSrc $claudeMdTarget '~/.claude/CLAUDE.md'
-
-# ── 4. Merge settings.json (does NOT overwrite settings.local.json) ───────
-$settingsSrc    = Join-Path $DotfilesDir 'settings.json'
-$settingsTarget = Join-Path $ClaudeDir   'settings.json'
-
-function Test-JsonObject($v) {
-    return ($null -ne $v) -and ($v.GetType().Name -eq 'PSCustomObject')
-}
-function Merge-Json($base, $overlay) {
-    # Deep-merge: overlay wins on scalar/array conflicts, recurse into objects.
-    $result = [ordered]@{}
-    foreach ($k in $base.PSObject.Properties.Name) { $result[$k] = $base.$k }
-    foreach ($p in $overlay.PSObject.Properties) {
-        if ($result.Contains($p.Name) -and (Test-JsonObject $result[$p.Name]) -and (Test-JsonObject $p.Value)) {
-            $result[$p.Name] = Merge-Json $result[$p.Name] $p.Value
-        } else {
-            $result[$p.Name] = $p.Value
-        }
-    }
-    return [pscustomobject]$result
-}
-
-if (-not (Test-Path $settingsTarget)) {
-    Copy-Item $settingsSrc $settingsTarget
-    Write-Ok "~/.claude/settings.json created from template"
-} else {
-    $existing = Get-Content $settingsTarget -Raw | ConvertFrom-Json
-    $template = Get-Content $settingsSrc -Raw    | ConvertFrom-Json
-    $merged   = Merge-Json $existing $template
-    $merged | ConvertTo-Json -Depth 20 | Set-Content -Path $settingsTarget -Encoding utf8
-    Write-Ok "~/.claude/settings.json merged with template (existing keys preserved)"
-}
-
-# ── 5. Install jq (needed by the rtk hook) ────────────────────────────────
+# ── 3. Install jq (needed by the rtk hook) ────────────────────────────────
 Write-Host ""
 Write-Step "==> Installing jq..."
 if (Test-Path (Join-Path $LocalBin 'jq.exe')) {
@@ -136,7 +73,7 @@ if (Test-Path (Join-Path $LocalBin 'jq.exe')) {
     Write-Warn2 "winget not found. Install jq manually: https://jqlang.github.io/jq/download/"
 }
 
-# ── 6. Install rtk (token-efficient CLI proxy) ────────────────────────────
+# ── 4. Install rtk (token-efficient CLI proxy) ────────────────────────────
 # The upstream install.sh has no Windows branch, but the release ships a
 # prebuilt MSVC binary. Download the zip, drop rtk.exe in ~/.local/bin, and put
 # that dir on the user PATH.
@@ -172,13 +109,9 @@ if ((Get-Command rtk -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $L
     }
 }
 
-# ── 7. Copy rtk hook script ───────────────────────────────────────────────
-$hooksDir = Join-Path $ClaudeDir 'hooks'
-New-Item -ItemType Directory -Force -Path $hooksDir | Out-Null
-Copy-Item -Force (Join-Path $DotfilesDir 'hooks\rtk-rewrite.sh') (Join-Path $hooksDir 'rtk-rewrite.sh')
-Write-Ok "~/.claude/hooks/rtk-rewrite.sh installed"
-
-# ── 8. Configure rtk hook in settings.local.json ─────────────────────────
+# ── 5. Configure rtk hook in settings.local.json ─────────────────────────
+# rtk-rewrite.sh already arrived at ~/.claude/hooks via dotfiles.mjs install.
+$hooksDir      = Join-Path $ClaudeDir 'hooks'
 $localSettings = Join-Path $ClaudeDir 'settings.local.json'
 $hookSh = ((Join-Path $hooksDir 'rtk-rewrite.sh') -replace '\\','/')
 $bashCmd = if ($Bash) { "`"$($Bash -replace '\\','/')`" `"$hookSh`"" } else { "bash `"$hookSh`"" }
@@ -217,29 +150,8 @@ if (-not (Test-Path $localSettings)) {
     }
 }
 
-# ── 9. Install caveman (output compression plugin) ────────────────────────
 Write-Host ""
-Write-Step "==> Installing caveman..."
-if ($Bash) {
-    & $Bash -lc "curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash"
-    Write-Ok "caveman installed"
-} else {
-    Write-Warn2 "Git Bash not found — install caveman manually: https://github.com/JuliusBrussee/caveman"
-}
-
-# ── 10. Manual steps reminder ─────────────────────────────────────────────
-Write-Host ""
-Write-Step "==> Done! One manual step remaining:"
-Write-Host ""
-Write-Host "    Install context-mode plugin (run inside Claude Code):"
-Write-Host "      /plugin marketplace add mksglu/context-mode"
-Write-Host "      /plugin install context-mode@context-mode"
-Write-Host "    Then restart Claude Code."
-Write-Host ""
-Write-Step "==> Summary of what was installed:"
-Write-Host "    - ~/.claude/skills    <- copied from $DotfilesDir\skills"
-Write-Host "    - ~/.claude/CLAUDE.md <- from $DotfilesDir\CLAUDE.md"
-Write-Host "    - jq  (required by the rtk hook)"
-Write-Host "    - rtk (CLI token proxy, 60-90% savings)"
-Write-Host "    - caveman (output compression, ~75% savings)"
-Write-Host "    - context-mode: install manually in Claude Code (see above)"
+Write-Step "==> Done. Final steps:"
+Write-Host "    1. Open Claude Code once - plugins in settings.json auto-install."
+Write-Host "    2. MCP servers with OAuth (sentry, neon, context7) authenticate on first use."
+Write-Host "    3. Check output above for any [warn] lines."
