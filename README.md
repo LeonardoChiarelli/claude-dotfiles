@@ -45,7 +45,9 @@ install.ps1 / install.sh
 ## Regras
 
 - `settings.local.json` NUNCA entra no repo (permissions/hooks machine-local).
-- `home/settings.json` fica tokenizado; paths reais só existem em `~/.claude`.
+- `home/settings.json` fica tokenizado; paths reais só existem em `~/.claude`. As duas formas de path da máquina (`C:\\Users\...` e `C:/Users/...`) viram token no export, e o scan aborta se sobrar path de máquina no arquivo versionado.
+- Paths tokenizados usam separador `/`: o Windows aceita, o Unix exige. É o que faz os hooks renderizados funcionarem nas três plataformas.
+- `mcp.json`: segredo em `env`, `headers` (ex.: `Authorization`) ou `args` (`--api-key`) vira `{{SECRET:...}}` no export; o installer pula esse server e manda registrar à mão.
 - Segredo detectado pelo scan aborta o commit. Sem exceção sem revisão humana.
 - Marketplace com source `directory` (ex.: cowork-roles) não é reproduzível de GitHub — o installer avisa e segue.
 

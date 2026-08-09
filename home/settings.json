@@ -48,7 +48,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}\\hooks\\guard-edits.mjs\"",
+            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}/hooks/guard-edits.mjs\"",
             "statusMessage": "Verificando proteção de .env"
           }
         ]
@@ -58,12 +58,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}\\hooks\\guard-source-footage.mjs\"",
+            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}/hooks/guard-source-footage.mjs\"",
             "statusMessage": "Verificando proteção de footage/"
           },
           {
             "type": "command",
-            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}\\hooks\\validate-manifest.mjs\"",
+            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}/hooks/validate-manifest.mjs\"",
             "statusMessage": "Validando manifest.json"
           }
         ]
@@ -73,12 +73,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}\\hooks\\guard-source-footage.mjs\"",
+            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}/hooks/guard-source-footage.mjs\"",
             "statusMessage": "Verificando proteção de footage/ (ffmpeg)"
           },
           {
             "type": "command",
-            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}\\hooks\\ffmpeg-safety.mjs\"",
+            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}/hooks/ffmpeg-safety.mjs\"",
             "statusMessage": "Verificando segurança do ffmpeg"
           }
         ]
@@ -90,12 +90,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}\\hooks\\check-emdash.mjs\"",
+            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}/hooks/check-emdash.mjs\"",
             "statusMessage": "Checando copy pt-BR (em-dash)"
           },
           {
             "type": "command",
-            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}\\hooks\\dotfiles-drift.mjs\"",
+            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}/hooks/dotfiles-drift.mjs\"",
             "statusMessage": "Checando drift de dotfiles"
           }
         ]
@@ -105,7 +105,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}\\hooks\\auto-ffprobe.mjs\"",
+            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}/hooks/auto-ffprobe.mjs\"",
             "statusMessage": "auto-ffprobe: verificando saída de vídeo"
           }
         ]
@@ -115,12 +115,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}\\hooks\\lint-hyperframes.mjs\"",
+            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}/hooks/lint-hyperframes.mjs\"",
             "statusMessage": "lint-hyperframes: verificando composição"
           },
           {
             "type": "command",
-            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}\\hooks\\caption-readability.mjs\"",
+            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}/hooks/caption-readability.mjs\"",
             "statusMessage": "caption-readability: verificando legenda ASS"
           }
         ]
@@ -131,7 +131,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"C:/Program Files/nodejs/node.exe\" \"C:/Users/Leonardo/.claude/hooks/context-mode-cache-heal.mjs\""
+            "command": "\"{{NODE}}\" \"{{CLAUDE_HOME}}/hooks/context-mode-cache-heal.mjs\""
           }
         ]
       }
@@ -139,7 +139,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \"{{CLAUDE_HOME}}\\hooks\\caveman-statusline.ps1\""
+    "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \"{{CLAUDE_HOME}}/hooks/caveman-statusline.ps1\""
   },
   "enabledPlugins": {
     "superpowers@claude-plugins-official": true,
@@ -177,7 +177,7 @@
     "cowork-roles": {
       "source": {
         "source": "directory",
-        "path": "{{CLAUDE_HOME}}\\plugins\\marketplaces\\cowork-roles"
+        "path": "{{CLAUDE_HOME}}/plugins/marketplaces/cowork-roles"
       }
     },
     "marketingskills": {
