@@ -492,7 +492,7 @@ git commit -m "feat: add install subcommand (render settings, merge memory, regi
 - Consumes: `cmdExport`, `install` via child process, `sanitizeSettings`, `listManifestFiles`, `walk`, `memoryDir`, `projectKey`.
 - Produces: CLI `node tools/dotfiles.mjs roundtrip` — exits 0 with `roundtrip: OK` when export→install reproduces the machine config exactly (modulo tokens).
 
-- [ ] **Step 1: Add `cmdRoundtrip` (insert after `cmdInstall`)**
+- [x] **Step 1: Add `cmdRoundtrip` (insert after `cmdInstall`)**
 
 ```js
 // ── roundtrip: export, install into a temp home, compare — proves both paths ─
@@ -539,14 +539,14 @@ function cmdRoundtrip() {
 
 Note on templated compare: the child rendered `{{CLAUDE_HOME}}` with the temp path and `{{NODE}}` with the same `process.execPath`; sanitizing each side with its own home turns both back into tokens, so equal strings prove reversibility.
 
-- [ ] **Step 2: Register it** — `roundtrip: cmdRoundtrip,` in `commands`.
+- [x] **Step 2: Register it** — `roundtrip: cmdRoundtrip,` in `commands`.
 
-- [ ] **Step 3: Run it**
+- [x] **Step 3: Run it**
 
 Run: `node tools/dotfiles.mjs roundtrip`
 Expected: export logs, child install logs, then `roundtrip: OK (N config files + memory verified)` with exit 0.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add tools/dotfiles.mjs

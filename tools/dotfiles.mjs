@@ -208,6 +208,47 @@ function cmdInstall() {
   log('ok', 'plugins: declared in settings.json (enabledPlugins) — open Claude Code once and they auto-install');
 }
 
+// ── roundtrip: export, install into a temp home, compare — proves both paths ─
+function cmdRoundtrip() {
+  cmdExport();
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'claude-dotfiles-rt-'));
+  const r = spawnSync(
+    process.execPath,
+    [fileURLToPath(import.meta.url), 'install', '--no-mcp'],
+    { env: { ...process.env, CLAUDE_HOME: tmp }, stdio: 'inherit' },
+  );
+  if (r.status !== 0) {
+    console.error('roundtrip: install failed');
+    process.exit(1);
+  }
+  let fail = 0;
+  const srcFiles = listManifestFiles(CLAUDE_HOME);
+  for (const rel of srcFiles) {
+    const aPath = path.join(CLAUDE_HOME, rel);
+    const bPath = path.join(tmp, rel);
+    if (!fs.existsSync(bPath)) { console.error(`[FAIL] missing after install: ${rel}`); fail++; continue; }
+    if (manifest.templated.includes(rel)) {
+      const a = sanitizeSettings(fs.readFileSync(aPath, 'utf8'), CLAUDE_HOME);
+      const b = sanitizeSettings(fs.readFileSync(bPath, 'utf8'), tmp);
+      if (a !== b) { console.error(`[FAIL] templated mismatch: ${rel}`); fail++; }
+    } else if (!fs.readFileSync(aPath).equals(fs.readFileSync(bPath))) {
+      console.error(`[FAIL] content mismatch: ${rel}`); fail++;
+    }
+  }
+  const memSrc = memoryDir(CLAUDE_HOME);
+  if (fs.existsSync(memSrc)) {
+    for (const rel of walk(memSrc)) {
+      const bPath = path.join(memoryDir(tmp), rel);
+      if (!fs.existsSync(bPath) || !fs.readFileSync(path.join(memSrc, rel)).equals(fs.readFileSync(bPath))) {
+        console.error(`[FAIL] memory mismatch: ${rel}`); fail++;
+      }
+    }
+  }
+  fs.rmSync(tmp, { recursive: true, force: true });
+  if (fail) { console.error(`roundtrip: ${fail} mismatches`); process.exit(1); }
+  console.log(`roundtrip: OK (${srcFiles.length} config files + memory verified)`);
+}
+
 // ── scan: heuristic secret scan over pending repo changes (or one file) ─────
 // Flags lines like `api_key = "abc123..."`: secret-ish keyword, then a long
 // value containing at least one digit (cuts code false-positives like
@@ -266,6 +307,7 @@ const cmd = positional[0];
 const commands = {
   export: cmdExport,
   install: cmdInstall,
+  roundtrip: cmdRoundtrip,
   scan: () => cmdScan(positional[1]),
 };
 if (!commands[cmd]) {
