@@ -12,3 +12,4 @@
 - [nudge-project](nudge-project.md) — sistema local Windows de lembretes escalonados (Rust+Tauri); fase 1 implementada (66 testes), faltam verificações manuais e fases 2-5
 - [ccusage-statusline](ccusage-statusline.md) — ccusage global wired na statusline (~/.claude/hooks/caveman-statusline.ps1) mostra contexto% e limite sessão (block 5h)
 - [vercel-cli-detect-windows-patch](vercel-cli-detect-windows-patch.md) — plugin Vercel dá falso "CLI não instalado" no Windows; patch local reaplicar após update do plugin
+- [codex-dotfiles-repo](codex-dotfiles-repo.md) — são dois repos de dotfiles; /sync-dotfiles só cobre o do Claude, Codex-dotfiles precisa de export manual
