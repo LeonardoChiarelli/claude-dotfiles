@@ -66,13 +66,24 @@ git config core.hooksPath .githooks
 **4b. Api_key de telemetria** (antes, checar duplicidade: perguntar ao founder se ele já criou cliente com esse slug; em dúvida, conferir no painel admin. Slug já registrado: perguntar antes de criar registro novo)
 
 Pré-checagem: `SITE/.env.local` existe e contém `DATABASE_URL` e
-`ENCRYPTION_KEY`. Faltando: parar e instruir o founder a preencher.
+`ENCRYPTION_KEY`. Faltando: a chave de prod é *sensitive* na Vercel (não
+pode ser lida por ninguém), então o seed local não roda. Fallback: criar o
+cliente pelo painel admin de produção ("Novo cliente", com o select Tipo),
+usando o email do founder como contato para o welcome não ir ao cliente, e
+corrigir o email na tela de configuração em seguida. As credenciais
+aparecem UMA vez na tela.
 
 ```bash
 cd SITE
 npm run db:seed-client -- --nome "<cliente>" --ferramenta "<slug>" \
-  --email "<email>" [--valor-cents <valor>]
+  --email "<email>" --tipo <tipo-cliente> [--valor-cents <valor>]
 ```
+
+`--tipo` mapeia o tipo do wizard para `clientes.tipo` do admin (default
+`desktop`): `desktop-python` -> `desktop`, `web-app` -> `web_app`,
+`automacao` -> `automacao`, `agente-ia` -> `agente_ia`. Fora de `desktop`
+o painel esconde a seção Distribuição (upload de `.exe`/`.dmg`) e a rota de
+versões responde 409.
 
 Capturar do output `CHIARELLI_API_KEY` e `CHIARELLI_API_SECRET` e gravar
 IMEDIATAMENTE em `PROJETOS/<projeto>/.env.local` (arquivo gitignored).

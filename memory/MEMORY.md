@@ -1,4 +1,7 @@
 # memories
+- [scaffold-projetos-status](scaffold-projetos-status.md) — project-templates + skill novo-projeto-chiarelli entregues (CI verde); pendem PR #209, E2E em prod e smoke da skill
+- [claude-dotfiles-bootstrap](claude-dotfiles-bootstrap.md) — repo claude-dotfiles é bootstrap completo; /sync-dotfiles + hook drift; máquina nova = clone + install
+- [validate-manifest-hook-gotcha](validate-manifest-hook-gotcha.md) — hook global bloqueia Write em qualquer manifest.json; usar shell ou escopar hook
 - [machine-migration-status](machine-migration-status.md) — migração lrchi→Leonardo 100% concluída (bundle removido, gh auth ok, rtk instalado)
 - [claude-config-consolidation](claude-config-consolidation.md) — generic Claude config is user-global in ~/.claude; projects keep only project-specific bits; cleanup on branch chore/consolidate-claude-config (unmerged)
 - [prefer-orchestrator-routing](prefer-orchestrator-routing.md) — route multi-domain work via orchestrator pattern (named agents), not subagent-driven skill (which hardcodes general-purpose)
@@ -8,3 +11,4 @@
 - [claude-mem-marketing-skills-install](claude-mem-marketing-skills-install.md) — marketing-skills (45) instalado global user-scope; claude-mem@thedotmack desinstalado (estava quebrado)
 - [nudge-project](nudge-project.md) — sistema local Windows de lembretes escalonados (Rust+Tauri); fase 1 implementada (66 testes), faltam verificações manuais e fases 2-5
 - [ccusage-statusline](ccusage-statusline.md) — ccusage global wired na statusline (~/.claude/hooks/caveman-statusline.ps1) mostra contexto% e limite sessão (block 5h)
+- [vercel-cli-detect-windows-patch](vercel-cli-detect-windows-patch.md) — plugin Vercel dá falso "CLI não instalado" no Windows; patch local reaplicar após update do plugin

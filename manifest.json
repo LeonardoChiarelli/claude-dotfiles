@@ -7,7 +7,8 @@
     "skills",
     "agents",
     "hooks",
-    "outcomes"
+    "outcomes",
+    "scripts"
   ],
   "excludeSegments": ["node_modules", "__pycache__", ".git"],
   "excludeBasenames": ["settings.local.json", ".DS_Store", "Thumbs.db"],
