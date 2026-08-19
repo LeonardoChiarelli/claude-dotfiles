@@ -82,7 +82,16 @@ Memória não é changelog: não duplicar git log.
 
 ## Dotfiles sync
 
-Config global do Claude (skills, agents, hooks, outcomes, settings, CLAUDE.md) é versionada em `LeonardoChiarelli/claude-dotfiles` (clone em `~/dotfiles/claude`). Depois de modificar qualquer um desses, rodar `/sync-dotfiles` pra exportar, revisar diff e commitar. O hook `dotfiles-drift.mjs` lembra quando esquecer. Máquina nova: clonar o repo e rodar `install.ps1` (Windows) ou `install.sh` (Unix).
+São **dois** repos, um por harness. `/sync-dotfiles` cobre os dois numa rodada só.
+
+| repo | clone | espelha |
+|---|---|---|
+| `LeonardoChiarelli/claude-dotfiles` | `~/dotfiles/claude` | `~/.claude`: CLAUDE.md, RTK.md, settings.json, keybindings.json, skills, agents, hooks, outcomes, scripts, memory, mcp.json |
+| `LeonardoChiarelli/Codex-dotfiles` | `~/dotfiles/Codex` | `~/.codex`: AGENTS.md, RTK.md, CLAUDE_MIGRATION.md, hooks.json, hooks, agents, outcomes, config.toml sanitizado, e `~/.agents/skills` |
+
+Depois de modificar qualquer um desses, rodar `/sync-dotfiles` pra exportar, revisar diff e commitar. O hook `dotfiles-drift.mjs` lembra quando esquecer. Máquina nova: clonar os dois repos e rodar `install.ps1` (Windows) ou `install.sh` (Unix) em cada um.
+
+O `config.toml` do Codex passa por `portableConfig()`, que trabalha com allowlist: `PORTABLE_SECTIONS` (seções) e `PORTABLE_ROOT_KEYS` (chaves de raiz). Ficam de fora, de propósito, `sandbox_mode`, `auth.json`, os `[projects.*]` com trust level e o path do `notify`. Chave de raiz nova só viaja se entrar em `PORTABLE_ROOT_KEYS`, senão some calada.
 
 @RTK.md
 # graphify
