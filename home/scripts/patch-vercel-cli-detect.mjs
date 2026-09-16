@@ -1,37 +1,35 @@
 #!/usr/bin/env node
 /**
- * Local patch: fix false "The Vercel CLI is not installed" on Windows.
+ * Corrige o falso negativo da deteccao da Vercel CLI no Windows.
  *
- * Upstream bug in claude-plugins-official/vercel -> hooks/session-start-profiler.mjs
- * (function checkVercelCli):
+ * O plugin tenta executar primeiro o shim sem extensao e depois um .cmd sem
+ * shell. No Windows, esses caminhos podem falhar com ENOENT ou EINVAL mesmo
+ * quando a CLI esta instalada. O patch prioriza PATHEXT e usa shell para os
+ * shims do Windows.
  *
- *   1. getBinaryPathCandidates() tries the extension-less suffix FIRST. On Windows,
- *      `npm i -g vercel` writes three shims (vercel, vercel.cmd, vercel.ps1) and
- *      accessSync(path, X_OK) behaves like F_OK, so the resolver picks the bare
- *      `vercel` sh script, which CreateProcess cannot run -> ENOENT.
- *
- *   2. Even when it resolves to vercel.cmd, execFileSync without `shell: true`
- *      refuses .cmd/.bat since Node 18.20.2 / 20.12.2 (CVE-2024-27980) -> EINVAL.
- *
- * Either failure lands in the catch, returns { installed: false }, and the hook
- * injects "IMPORTANT: The Vercel CLI is not installed." into the model context.
- *
- * This script rewrites the compiled .mjs in every plugin cache it finds
- * (Claude Code and Codex). It is idempotent and keeps a .orig backup.
- * Re-run it after a plugin update, which restores the upstream file.
- *
- * Usage: node ~/.claude/scripts/patch-vercel-cli-detect.mjs [--check]
+ * O script e idempotente, mantem um backup .orig e roda no SessionStart para
+ * se recuperar automaticamente quando uma atualizacao sobrescreve o cache.
  */
 
-import { readFileSync, writeFileSync, existsSync, readdirSync, copyFileSync } from "node:fs";
-import { join } from "node:path";
+import {
+  accessSync,
+  constants,
+  copyFileSync,
+  existsSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir } from "node:os";
+import { join } from "node:path";
 
 const MARKER = "// [local-patch:win-cli-detect]";
 const CHECK_ONLY = process.argv.includes("--check");
 
-const SUFFIX_FROM = `const suffixes = hasExecutableExtension ? [""] : ["", ...WINDOWS_EXECUTABLE_EXTENSIONS];`;
-const SUFFIX_TO = `const suffixes = hasExecutableExtension ? [""] : [...WINDOWS_EXECUTABLE_EXTENSIONS, ""]; ${MARKER} PATHEXT before bare name`;
+const SUFFIX_FROM =
+  'const suffixes = hasExecutableExtension ? [""] : ["", ...WINDOWS_EXECUTABLE_EXTENSIONS];';
+const SUFFIX_TO =
+  'const suffixes = hasExecutableExtension ? [""] : [...WINDOWS_EXECUTABLE_EXTENSIONS, ""]; // [local-patch:win-cli-detect] PATHEXT before bare name';
 
 const HELPER = `
 ${MARKER} run through cmd on Windows: execFileSync rejects .cmd/.bat without shell (CVE-2024-27980)
@@ -43,33 +41,38 @@ function execBinarySyncPatched(binary, args, options) {
 }
 `;
 
-const HELPER_ANCHOR = `function getBinaryPathCandidates(binaryName) {`;
+const HELPER_ANCHOR = "function getBinaryPathCandidates(binaryName) {";
 
 function patchSource(source) {
-  let out = source;
+  let output = source;
 
-  if (!out.includes(SUFFIX_FROM)) {
+  if (!output.includes(SUFFIX_FROM)) {
     throw new Error("suffix-order anchor not found (upstream code changed?)");
   }
-  out = out.replace(SUFFIX_FROM, SUFFIX_TO);
+  output = output.replace(SUFFIX_FROM, SUFFIX_TO);
 
-  if (!out.includes(HELPER_ANCHOR)) {
+  if (!output.includes(HELPER_ANCHOR)) {
     throw new Error("helper anchor not found (upstream code changed?)");
   }
-  out = out.replace(HELPER_ANCHOR, `${HELPER}${HELPER_ANCHOR}`);
+  output = output.replace(HELPER_ANCHOR, `${HELPER}${HELPER_ANCHOR}`);
 
-  const callsBefore = (out.match(/execFileSync\((vercelBinary|npmBinary),/g) || []).length;
-  if (callsBefore !== 2) {
-    throw new Error(`expected 2 execFileSync call sites, found ${callsBefore}`);
+  const callCount =
+    (output.match(/execFileSync\((vercelBinary|npmBinary),/g) || []).length;
+  if (callCount !== 2) {
+    throw new Error(`expected 2 execFileSync call sites, found ${callCount}`);
   }
-  out = out.replace(/execFileSync\((vercelBinary|npmBinary),/g, "execBinarySyncPatched($1,");
-
-  return out;
+  return output.replace(
+    /execFileSync\((vercelBinary|npmBinary),/g,
+    "execBinarySyncPatched($1,",
+  );
 }
 
 function findTargets() {
   const home = homedir();
-  const roots = [join(home, ".claude", "plugins", "cache"), join(home, ".codex", "plugins", "cache")];
+  const roots = [
+    join(home, ".claude", "plugins", "cache"),
+    join(home, ".codex", "plugins", "cache"),
+  ];
   const targets = [];
 
   for (const root of roots) {
@@ -78,7 +81,12 @@ function findTargets() {
       const vercelDir = join(root, marketplace, "vercel");
       if (!existsSync(vercelDir)) continue;
       for (const version of readdirSync(vercelDir)) {
-        const file = join(vercelDir, version, "hooks", "session-start-profiler.mjs");
+        const file = join(
+          vercelDir,
+          version,
+          "hooks",
+          "session-start-profiler.mjs",
+        );
         if (existsSync(file)) targets.push(file);
       }
     }
@@ -100,29 +108,33 @@ for (const file of targets) {
   const source = readFileSync(file, "utf-8");
 
   if (source.includes(MARKER)) {
-    console.log(`[ok ] ja patchado: ${file}`);
     skipped++;
     continue;
   }
 
   if (CHECK_ONLY) {
-    console.log(`[!! ] precisa de patch: ${file}`);
+    console.error(`[vercel-cli-detect] precisa de patch: ${file}`);
     failed++;
     continue;
   }
 
   try {
-    const out = patchSource(source);
+    accessSync(file, constants.W_OK);
+    const output = patchSource(source);
     const backup = `${file}.orig`;
     if (!existsSync(backup)) copyFileSync(file, backup);
-    writeFileSync(file, out, "utf-8");
-    console.log(`[fix] patchado: ${file}`);
+    writeFileSync(file, output, "utf-8");
     patched++;
   } catch (error) {
-    console.log(`[err] ${file}: ${error.message}`);
+    console.error(`[vercel-cli-detect] ${file}: ${error.message}`);
     failed++;
   }
 }
 
-console.log(`\npatchados=${patched} ja-ok=${skipped} falhas=${failed}`);
-process.exit(failed > 0 && CHECK_ONLY ? 1 : failed > 0 ? 1 : 0);
+if (patched > 0 || failed > 0) {
+  console.log(
+    `[vercel-cli-detect] patchados=${patched} ja-ok=${skipped} falhas=${failed}`,
+  );
+}
+
+process.exit(failed > 0 ? 1 : 0);

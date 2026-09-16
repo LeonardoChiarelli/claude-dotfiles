@@ -61,7 +61,14 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   let raw = "";
   process.stdin.on("data", (c) => (raw += c));
   process.stdin.on("end", () => {
-    const { tool_name, tool_input } = JSON.parse(raw || "{}");
+    let payload;
+    try {
+      payload = JSON.parse(raw || "{}");
+    } catch {
+      process.exit(0);
+      return;
+    }
+    const { tool_name, tool_input } = payload;
     if (tool_name === "Bash" && ffmpegUnsafe(tool_input?.command || "")) {
       process.stderr.write("BLOCKED: ffmpeg deve escrever em build/ ou out/ e nunca in-place.\n");
       process.exit(2);

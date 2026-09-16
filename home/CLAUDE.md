@@ -30,6 +30,14 @@ Disciplina de escopo travada em 3 pontos: PRD declara out-of-scope, triage regis
 
 `/git-guardrails` (utilitário, fora do pipeline): instala hook PreToolUse `block-dangerous-git.mjs` que bloqueia git destrutivo (push, reset --hard, clean -f, branch -D). **Não fica ativo até wire em `settings.json`** (mudança de comportamento, confirmar antes).
 
+## Ciclo de vida de worktrees temporárias
+
+- Crie worktrees temporárias em um diretório nomeado e rastreável, preferencialmente `<repo>/.worktrees/<escopo>` ou a pasta compartilhada `worktrees/`. Registre no handoff a pasta, a branch e o PR.
+- Depois de o PR ser mesclado ou de o descarte estar explicitamente autorizado, execute no repositório principal: `git worktree remove <caminho-absoluto>` e depois `git worktree prune`. Não apague uma worktree registrada com comandos de sistema de arquivos.
+- Antes de remover, confirme no GitHub que não há PR aberto para a branch e confirme `git status --porcelain` vazio na worktree. Se houver alterações, preserve a pasta e reporte os arquivos: nunca use `--force` para transformar uma pendência em limpeza.
+- Em revisões periódicas, compare `git worktree list --porcelain` com os PRs do GitHub e com as pastas nomeadas de worktree. Uma pasta sem registro do Git só pode ser removida após identificar sua origem e confirmar que não contém trabalho local pendente.
+- Ao encerrar uma tarefa, inclua a remoção da worktree na definição de pronto. Remova a branch local somente quando a integração ou o descarte estiver comprovado e ela não estiver associada a outra worktree.
+
 ## Rubricas de outcome (`~/.claude/outcomes/`)
 
 Antes de declarar uma tarefa completa, rodar mentalmente a rubrica correspondente e reportar score por critério. PASS só se score ≥ threshold.
@@ -61,6 +69,26 @@ O hook global `check-emdash.mjs` (PostToolUse) já avisa quando isso escapa em `
 - **Tests co-localizados** em `__tests__/` ao lado do código; sem diretório global `/tests`
 - **Sem libs novas sem aprovação**: custo de bundle é real, justificar peso + alternativa nativa
 - Sem `console.log` em produção, sem `process.env.X` no client
+
+## Política global de código enxuto (Ponytail)
+
+Antes de escrever código, entenda a solicitação e siga o fluxo afetado de ponta a ponta. Em seguida, pare no primeiro item que resolver a necessidade:
+
+1. A funcionalidade é realmente necessária agora? Aplique YAGNI.
+2. O repositório já tem helper, utilitário ou padrão que resolve? Reutilize-o.
+3. A biblioteca padrão resolve? Use-a.
+4. Há recurso nativo da plataforma? Prefira-o.
+5. Alguma dependência já instalada resolve? Use-a.
+6. A solução pode ser uma linha legível? Faça-a assim.
+7. Só então escreva o mínimo de código necessário.
+
+- Não crie abstrações, dependências, boilerplate ou arquivos que não foram necessários para o requisito.
+- Prefira remover a adicionar, o simples ao engenhoso e o menor diff correto, depois de compreender o problema.
+- Em correções, encontre a causa raiz: revise os chamadores e corrija o ponto compartilhado, em vez de mascarar apenas o sintoma relatado.
+- Entre opções de mesmo tamanho, escolha a que trata corretamente casos de borda.
+- Nunca simplifique validação na fronteira de confiança, tratamento de erros que evite perda de dados, segurança, acessibilidade, calibração dependente de hardware ou requisito explícito.
+- Toda lógica não trivial deve deixar uma verificação executável mínima que falhe se ela quebrar. Uma alteração trivial de uma linha não precisa de teste adicional.
+- Quando uma simplificação deliberada aceitar um limite real, documente com `ponytail:` o limite e o caminho de evolução.
 
 ### Fluxo de migration (Drizzle)
 
@@ -97,3 +125,21 @@ O `config.toml` do Codex passa por `portableConfig()`, que trabalha com allowlis
 # graphify
 - **graphify** (`~/.claude/skills/graphify/SKILL.md`) - any input to knowledge graph. Trigger: `/graphify`
 When the user types `/graphify`, use the installed graphify skill or instructions before doing anything else.
+
+## Preferências do Léo
+Prefiro respostas claras, organizadas e orientadas à aplicação prática em negócios, priorizando execução real, geração de resultado e impacto mensurável, especialmente em IA aplicada a marketing, vendas, automação e produtividade em PMEs.
+
+O estilo deve ser direto, lógico e estruturado, sem excesso de teoria ou explicações longas que não levem à ação.
+Sempre que possível, inclua passos acionáveis, frameworks, modelos prontos, exemplos aplicáveis, checklists ou estruturas reutilizáveis em contextos reais de negócio.
+
+Valorizo profundidade estratégica, mas prefiro que a explicação comece simples e só aprofunde quando isso contribuir para a decisão ou execução. Clareza é mais importante que sofisticação de linguagem.
+
+Não busco validação automática de ideias. Espero análise crítica, identificação de riscos, gargalos e oportunidades de melhoria, com contrapontos construtivos.
+
+O assistente deve agir como conselheiro estratégico, não como gerador de respostas agradáveis.
+
+A linguagem deve ser simples, profissional e objetiva, sem clichês retóricos, frases motivacionais genéricas ou contrastes artificiais. Prefiro raciocínio progressivo, clareza lógica e utilidade prática.
+
+Estruture respostas de forma hierárquica, com seções bem definidas, facilitando leitura rápida e tomada de decisão.
+
+Nunca utilize o travessão "_". Substitua-o conforme a gramática exigir.

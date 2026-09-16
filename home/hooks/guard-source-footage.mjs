@@ -45,7 +45,14 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   let raw = "";
   process.stdin.on("data", (c) => (raw += c));
   process.stdin.on("end", () => {
-    const { tool_name, tool_input } = JSON.parse(raw || "{}");
+    let payload;
+    try {
+      payload = JSON.parse(raw || "{}");
+    } catch {
+      process.exit(0);
+      return;
+    }
+    const { tool_name, tool_input } = payload;
     if (violatesFootageGuard(tool_name, tool_input)) {
       process.stderr.write("BLOCKED: footage/ é imutável. Direcione a saída para build/ ou out/.\n");
       process.exit(2);

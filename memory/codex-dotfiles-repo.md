@@ -1,6 +1,6 @@
 ---
 name: codex-dotfiles-repo
-description: "config do Codex tem repo próprio (LeonardoChiarelli/Codex-dotfiles, clone em ~/dotfiles/Codex); /sync-dotfiles só cobre o repo do Claude, o Codex precisa de export separado"
+description: "config do Codex tem repo próprio (LeonardoChiarelli/Codex-dotfiles, clone em ~/dotfiles/Codex); /sync-dotfiles cobre os dois numa rodada só desde 2026-08-19"
 metadata: 
   node_type: memory
   type: project
@@ -8,7 +8,7 @@ metadata:
   modified: 2026-08-19T19:39:20.649Z
 ---
 
-São **dois** repos de dotfiles, não um. A skill `/sync-dotfiles` só conhece o do Claude, então sincronizar "os dois" exige rodar o segundo à mão.
+São **dois** repos de dotfiles, não um. Desde o commit `f171db0` a skill `/sync-dotfiles` cobre os dois numa rodada só.
 
 | repo | clone | escopo |
 |---|---|---|
@@ -17,8 +17,8 @@ São **dois** repos de dotfiles, não um. A skill `/sync-dotfiles` só conhece o
 
 Os dois usam `node tools/dotfiles.mjs export|scan|install`, mas os manifests têm formatos diferentes (o do Codex é `schemaVersion: 1` com blocos `codex`/`skills`; o do Claude é uma lista `include` chapada).
 
-**Why:** o `CLAUDE.md` global só cita `claude-dotfiles`, então é fácil sincronizar metade e achar que acabou.
+**Why:** os manifests têm formatos diferentes, então um export manual do Codex usa flags diferentes do Claude. E por muito tempo `/sync-dotfiles` cobria só metade.
 
-**How to apply:** depois do `/sync-dotfiles`, rodar também `node ~/dotfiles/Codex/tools/dotfiles.mjs export && node ~/dotfiles/Codex/tools/dotfiles.mjs scan`, revisar o diff e commitar. O `config.toml` exportado é sanitizado por `portableConfig()`: allowlist de seções (`PORTABLE_SECTIONS`) + allowlist de chaves de raiz (`PORTABLE_ROOT_KEYS`). Ele **exclui de propósito** `sandbox_mode`, além de `auth.json`, `[projects.*]` (trust levels) e o path do `notify`. Chave de config nova na raiz do `config.toml` só viaja se entrar em `PORTABLE_ROOT_KEYS`, senão some calada.
+**How to apply:** `/sync-dotfiles` já roda os dois. Export manual do Codex: `node ~/dotfiles/Codex/tools/dotfiles.mjs export && node ~/dotfiles/Codex/tools/dotfiles.mjs scan`. O `config.toml` exportado é sanitizado por `portableConfig()`: allowlist de seções (`PORTABLE_SECTIONS`) + allowlist de chaves de raiz (`PORTABLE_ROOT_KEYS`). Ele **exclui de propósito** `sandbox_mode`, além de `auth.json`, `[projects.*]` (trust levels) e o path do `notify`. Chave de config nova na raiz do `config.toml` só viaja se entrar em `PORTABLE_ROOT_KEYS`, senão some calada.
 
 Relacionado: [[claude-dotfiles-bootstrap]], [[vercel-cli-detect-windows-patch]].
