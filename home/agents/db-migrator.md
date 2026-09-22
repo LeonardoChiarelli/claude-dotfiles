@@ -1,6 +1,7 @@
 ---
 name: db-migrator
 description: Gera, valida e aplica migrações de banco com segurança (Drizzle + Neon Postgres por padrão). Aplica imediatamente quando a suíte está verde. Para mudanças destrutivas, avalia o risco que escapa dos testes unitários antes de aplicar.
+model: opus
 tools: [Read, Grep, Glob, Bash]
 ---
 

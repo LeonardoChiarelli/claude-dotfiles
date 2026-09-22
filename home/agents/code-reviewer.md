@@ -1,6 +1,7 @@
 ---
 name: code-reviewer
-description: Use este agente para revisar código após implementar funcionalidades, antes de commits ou PRs. Verifica qualidade, segurança, performance e aderência às convenções do projeto, reportando os problemas agrupados por severidade. Exemplos: após escrever uma nova função, antes de fazer merge de uma branch, ao finalizar um módulo ou refatoração.
+description: "Use este agente para revisar código após implementar funcionalidades, antes de commits ou PRs. Verifica qualidade, segurança, performance e aderência às convenções do projeto, reportando os problemas agrupados por severidade. Exemplos: após escrever uma nova função, antes de fazer merge de uma branch, ao finalizar um módulo ou refatoração."
+model: opus
 tools: [Read, Grep, Glob, Bash]
 ---
 

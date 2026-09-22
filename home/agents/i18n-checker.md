@@ -1,6 +1,7 @@
 ---
 name: i18n-checker
 description: Verifica paridade entre os arquivos de mensagens de cada locale (sem chave faltando ou sobrando), valida interpolações e detecta strings hardcoded que deveriam viver nos arquivos de tradução. Use ao adicionar/editar copy ou rotas, ou antes de release. Não aplica fixes.
+model: haiku
 tools: [Read, Grep, Glob]
 ---
 

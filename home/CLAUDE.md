@@ -12,7 +12,22 @@ Estas são as convenções-base. Um `CLAUDE.md` de projeto pode sobrescrever qua
 
 Roster genérico disponível em qualquer projeto. Agents project-local em `.claude/agents/` estendem este roster. O roster completo, com a descrição de cada agent, já chega injetado no system prompt: não duplicar a lista aqui, que envelhece.
 
-Como invocar: rotear trabalho multi-domínio pelo agent `orchestrator` via Task tool (que spawna os demais), não de forma ad-hoc.
+Como invocar: a **sessão principal organiza** e despacha os subagents pelo nome (tool `Agent`). O agente `orchestrator` fica para auditorias multi-domínio pontuais, não para entregas.
+
+## Papéis por modelo e fluxo `/entrega`
+
+| Papel | Claude | Codex | Agente |
+|---|---|---|---|
+| Organiza, monta workflow, revisão final | Fable | Astra (`gpt-6-astra`, high) | sessão principal |
+| Revisa e corrige cada fatia | Opus | Sol (`gpt-5.6-sol`, high) | `slice-reviewer` |
+| Implementa | Sonnet | Terra (`gpt-5.6-terra`, medium) | `implementer` |
+| Promove a branch (push, PR, squash merge com CI verde) | Haiku | Luna (`gpt-5.6-luna`, low) | `branch-promoter` |
+
+- Entrega de feature/bug/issue de ponta a ponta: usar `/entrega` (skill em `~/.claude/skills/entrega`).
+- Especialistas herdam a mesma lógica: revisores críticos (code, security, db) no tier Opus/Sol, trabalho padrão no Sonnet/Terra, tarefas mecânicas no Haiku/Luna.
+- **Sem dependência do GitHub Actions** (decisão de 2026-09-21: Actions não contratado). O gate de merge é a **validação local**: o organizador roda a suíte obrigatória do `AGENTS.md` do repo sobre o SHA final e passa `local_validation: pass` ao promotor. Merge automático (squash) só com validação local aprovada e veredito final `approve`.
+- CI é informativo: check que executou e falhou bloqueia; ausência de CI, check pendente ou job não iniciado por cobrança não bloqueia.
+- Guardrail ativo: `git-promotion-guard.mjs` (PreToolUse) bloqueia force push, push/deleção de `main|master|production|prod`, `gh pr merge` sem `--squash` ou com `--admin`, e git destrutivo local. Teste: `node --test ~/.claude/hooks/git-promotion-guard.test.mjs`.
 
 ## Pipeline fixed-scope (spec → issues → entrega)
 
@@ -28,7 +43,20 @@ Skills em `~/.claude/skills/` que encurtam o caminho de spec a entrega no modelo
 
 Disciplina de escopo travada em 3 pontos: PRD declara out-of-scope, triage registra rejeições, review eixo-Spec caça scope creep.
 
-`/git-guardrails` (utilitário, fora do pipeline): instala hook PreToolUse `block-dangerous-git.mjs` que bloqueia git destrutivo (push, reset --hard, clean -f, branch -D). **Não fica ativo até wire em `settings.json`** (mudança de comportamento, confirmar antes).
+`/git-guardrails` (utilitário, fora do pipeline): versão genérica que bloqueia **todo** push. Não usar junto com o fluxo `/entrega`: o guardrail global ativo é o `git-promotion-guard.mjs`, que libera push de branch de feature e squash merge.
+
+## Revisão cruzada Claude ↔ Codex
+
+Plano de referência: dois agentes, um autor e um revisor de outro fornecedor. Nada de memória compartilhada: o revisor recebe um pacote explícito e devolve resposta estruturada.
+
+- **Quando:** risco médio ou alto (ver `/entrega`). Risco baixo dispensa.
+- **Claude → Codex:** `/codex:review` (diff), `/codex:adversarial-review` (plano/design). Rescue só leitura: `node <plugin codex>/scripts/codex-companion.mjs task "<prompt>"` sem `--write` (escrita e o subagent `codex:codex-rescue` estão bloqueados por `permissions.deny`).
+- **Codex → Claude:** skill `consult-claude`, que chama `ai-consult-claude` (repo `personal/ai-bridge`, contrato em `docs/ai/CONTRACT.md`). Somente leitura, JSON estrito, uma tentativa.
+- **Handoff:** o revisor recebe commit SHA ou diff, nunca "o estado atual". Saída: bloqueadores (só reproduzíveis ou fortemente fundamentados), riscos, melhorias, testes ausentes, veredito.
+- **Autoridade:** output do revisor é sugestão. O autor aplica só o que foi aprovado e roda a suíte de novo.
+- **Registro (métrica dos 30 dias):** seção "Revisão cruzada" no corpo do PR com: revisor, veredito, nº de apontamentos, nº que virou correção.
+- **Nunca** enviar `.env`, tokens, dumps de produção ou logs com PII no pacote.
+- **Base por repo:** `AGENTS.md` é a fonte comum; `CLAUDE.md` do repo contém só `@AGENTS.md` + regras exclusivas do Claude.
 
 ## Ciclo de vida de worktrees temporárias
 
@@ -142,4 +170,4 @@ A linguagem deve ser simples, profissional e objetiva, sem clichês retóricos, 
 
 Estruture respostas de forma hierárquica, com seções bem definidas, facilitando leitura rápida e tomada de decisão.
 
-Nunca utilize o travessão "_". Substitua-o conforme a gramática exigir.
+Nunca utilize o travessão (—) nem o meia-risca (–) como conector. Substitua conforme a gramática exigir.

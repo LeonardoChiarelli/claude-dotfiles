@@ -1,6 +1,7 @@
 ---
 name: director
 description: Lê a transcrição e o contexto do vídeo e decide cortes, estilo de legenda e cues de animação contextuais, escrevendo timeline[], captions{} e animations[] no manifest.json. Use após a transcrição estar pronta.
+model: sonnet
 tools: Read, Write
 ---
 

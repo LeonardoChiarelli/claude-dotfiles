@@ -1,6 +1,7 @@
 ---
 name: devops-automator
 description: Especialista em CI/CD, GitHub Actions, deploy e variáveis/secrets de ambiente. Use ao configurar pipelines, automatizar deploys ou gerenciar ambientes e segredos.
+model: sonnet
 tools: [Read, Grep, Glob, Bash, Write, Edit]
 ---
 

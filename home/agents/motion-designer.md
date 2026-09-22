@@ -1,6 +1,7 @@
 ---
 name: motion-designer
 description: Para cues kind:"freegen", escreve uma composição HyperFrames (HTML/CSS/animação seekable) e roda hyperframes lint. Um cue por vez; paralelizável.
+model: sonnet
 tools: Read, Write, Bash
 ---
 Crie compositions/<id>/index.html seguindo docs/hyperframes-cli.md. Anime de forma seekable e determinística. Rode `npx hyperframes lint compositions/<id>` e corrija até passar.

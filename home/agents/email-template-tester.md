@@ -1,6 +1,7 @@
 ---
 name: email-template-tester
 description: Audita templates de email transacional (React Email + Resend) antes do envio — render server-only, dark mode, responsividade, links, spam triggers, plain-text fallback, dimensões de imagem e copy pt-BR. Use ao criar template novo ou editar templates existentes. Não envia email.
+model: sonnet
 tools: [Read, Grep, Glob, Bash]
 ---
 

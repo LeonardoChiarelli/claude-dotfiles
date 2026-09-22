@@ -15,7 +15,7 @@ Em 2026-06-01 instalei 7 skills adaptadas de [mattpocock/skills](https://github.
 - Interação em pt-BR; corpo de issue/PRD/label/commit em inglês.
 - `two-axis-review`: renomeado p/ não colidir com `/review` e `/code-review` nativos. Eixo Standards roteia pro agent `code-reviewer` + `~/.claude/outcomes/code-review.yml` (não `general-purpose` hardcoded, ver [[prefer-orchestrator-routing]]). Eixo Spec é o valor exclusivo (scope creep) que os nativos não têm.
 - ADRs do `grill-with-docs` vão pra `.claude/memory/decisions.md` (convenção memory-hygiene), não `docs/adr/`.
-- `git-guardrails`: script bash original portado pra Node `.mjs` (Windows-compat, estilo de `guard-edits.mjs`/`check-emdash.mjs`). Hook verificado: bloqueia push/reset --hard com exit 2, permite commit/status. **Ainda não wired em settings.json** (mudança de comportamento, pendente de confirmação do usuário).
+- `git-guardrails`: script bash original portado pra Node `.mjs` (Windows-compat, estilo de `guard-edits.mjs`/`check-emdash.mjs`). Hook verificado: bloqueia push/reset --hard com exit 2, permite commit/status. Não wired: em 2026-09-21 o guard global passou a ser `git-promotion-guard.mjs` (libera push de feature), ver [[model-roles-entrega]].
 - Dropei seed GitLab; ficou GitHub + local markdown.
 
 **Não adotadas (overlap com superpowers/setup existente):** `grill-me`≈brainstorming, `tdd`≈superpowers:tdd, `diagnose`≈systematic-debugging, `write-a-skill`≈writing-skills, `caveman` (já tem plugin). Off-topic puladas: writing-*, edit-article, obsidian-vault, scaffold-exercises, migrate-to-shoehorn, teach.

@@ -1,6 +1,7 @@
 ---
 name: compositor
 description: Executa o render determinístico a partir do manifest.json (corte, legenda ASS, clipes alpha de animação, composição ffmpeg por perfil). Zero criatividade. Use quando o manifest estiver completo.
+model: haiku
 tools: Read, Bash
 ---
 

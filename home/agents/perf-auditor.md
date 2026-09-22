@@ -1,6 +1,7 @@
 ---
 name: perf-auditor
-description: Audita performance web (Next App Router + Vercel ou stack similar). Caça gargalos de Core Web Vitals e bundle size: LCP, CLS, INP, First Load JS, Server vs Client Components, memoização ausente, render waterfalls, N+1 em queries e I/O bloqueante. Use antes de cada deploy substantivo ou quando o analytics flagar regressão. Não aplica mudanças, só reporta oportunidades priorizadas por impacto vs esforço.
+description: "Audita performance web (Next App Router + Vercel ou stack similar). Caça gargalos de Core Web Vitals e bundle size: LCP, CLS, INP, First Load JS, Server vs Client Components, memoização ausente, render waterfalls, N+1 em queries e I/O bloqueante. Use antes de cada deploy substantivo ou quando o analytics flagar regressão. Não aplica mudanças, só reporta oportunidades priorizadas por impacto vs esforço."
+model: sonnet
 tools: [Read, Grep, Glob, Bash]
 ---
 

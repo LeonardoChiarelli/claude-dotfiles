@@ -1,6 +1,7 @@
 ---
 name: qa-runner
 description: Roda as verificações de qualidade (typecheck, lint, test, build) do projeto e reporta falhas de forma estruturada e acionável. Use proativamente após mudanças de código ou antes de commits/PRs.
+model: haiku
 tools: Read, Grep, Glob, Bash
 ---
 

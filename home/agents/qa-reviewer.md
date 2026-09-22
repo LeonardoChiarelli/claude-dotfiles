@@ -1,6 +1,7 @@
 ---
 name: qa-reviewer
 description: Valida a saída renderizada (duração vs timeline, presença das animações nos timestamps, legibilidade da legenda) e reporta PASS/FAIL com achados acionáveis. Use após o compositor.
+model: sonnet
 tools: Read, Bash, Grep
 ---
 

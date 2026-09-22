@@ -1,6 +1,7 @@
 ---
 name: security-reviewer
 description: Revisor de segurança sênior para qualquer aplicação web/app. Aciona proativamente após mudanças em autenticação, autorização, manipulação de dados sensíveis, uploads, integrações com LLMs ou APIs externas. Caça vulnerabilidades antes da produção e propõe correções acionáveis.
+model: opus
 tools: [Read, Grep, Glob, Bash]
 ---
 

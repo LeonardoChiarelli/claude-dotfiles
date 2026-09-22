@@ -6,10 +6,13 @@
 - [claude-config-consolidation](claude-config-consolidation.md) — generic Claude config is user-global in ~/.claude; projects keep only project-specific bits; cleanup on branch chore/consolidate-claude-config (unmerged)
 - [prefer-orchestrator-routing](prefer-orchestrator-routing.md) — route multi-domain work via orchestrator pattern (named agents), not subagent-driven skill (which hardcodes general-purpose)
 - [claude-md-autoload-paths](claude-md-autoload-paths.md) — only root/local/global CLAUDE.md auto-load; .claude/CLAUDE.md, .claude/.agents, .mdc rules are ignored
-- [engineering-pipeline-skills](engineering-pipeline-skills.md) — 7 fixed-scope spec→issues→entrega skills adapted from mattpocock/skills installed in ~/.claude/skills; needs per-repo /setup-engineering-pipeline; git-guardrails hook not yet wired
+- [engineering-pipeline-skills](engineering-pipeline-skills.md) — 7 fixed-scope spec→issues→entrega skills adapted from mattpocock/skills installed in ~/.claude/skills; needs per-repo /setup-engineering-pipeline; guard ativo é git-promotion-guard
 - [video-editor-toolkit](video-editor-toolkit.md) — toolkit pra editar vídeos com Claude Code (FFmpeg+HyperFrames+ASS, manifest Zod); spec+plano1 prontos, não implementado
 - [claude-mem-marketing-skills-install](claude-mem-marketing-skills-install.md) — marketing-skills (45) instalado global user-scope; claude-mem@thedotmack desinstalado (estava quebrado)
 - [nudge-project](nudge-project.md) — sistema local Windows de lembretes escalonados (Rust+Tauri); fase 1 implementada (66 testes), faltam verificações manuais e fases 2-5
 - [ccusage-statusline](ccusage-statusline.md) — ccusage global wired na statusline (~/.claude/hooks/caveman-statusline.ps1) mostra contexto% e limite sessão (block 5h)
 - [vercel-cli-detect-windows-patch](vercel-cli-detect-windows-patch.md) — plugin Vercel dá falso "CLI não instalado" no Windows; patch local reaplicar após update do plugin
 - [codex-dotfiles-repo](codex-dotfiles-repo.md) — são dois repos de dotfiles (claude-dotfiles + Codex-dotfiles); /sync-dotfiles cobre os dois
+- [model-roles-entrega](model-roles-entrega.md) — papéis Fable/Opus/Sonnet/Haiku ↔ Astra/Sol/Terra/Luna, skill /entrega, merge auto com CI verde, git-promotion-guard
+- [windows-shell-path-gotchas](windows-shell-path-gotchas.md) — ctx_execute shell manda /c/... pro git (vira C:\c\...); rtk distorce npm run lint
+- [codex-claude-integration-status](codex-claude-integration-status.md) — plano Codex+Claude fases 0-2 feitas 2026-09-21; 15 PRs Fase 0 travados por billing GitHub chiarelli-dev

@@ -1,6 +1,7 @@
 ---
 name: docs-writer
 description: Atualiza e mantém documentação (README, CHANGELOG, ADRs e arquivos de memória do projeto) sincronizada com o estado real do código e das decisões. Use após feature significativa, decisão arquitetural relevante, antes de release, ou quando houver drift entre código e docs. Escreve e edita arquivos.
+model: sonnet
 tools: [Read, Grep, Glob, Write, Edit]
 ---
 

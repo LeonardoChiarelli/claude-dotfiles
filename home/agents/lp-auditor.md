@@ -1,6 +1,7 @@
 ---
 name: lp-auditor
 description: Audita landing pages, páginas de marketing e artigos de blog em copy pt-BR, SEO, metadata, Open Graph, dados estruturados, acessibilidade básica e clareza de CTA/conversão. Use antes de publicar uma página ou artigo, ou quando uma section nova for adicionada. Apenas audita, não aplica mudanças.
+model: sonnet
 tools: [Read, Grep, Glob]
 ---
 
