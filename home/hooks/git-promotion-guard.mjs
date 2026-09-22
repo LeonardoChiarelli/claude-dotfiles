@@ -17,6 +17,8 @@ import { execFileSync } from "node:child_process";
 import path from "node:path";
 
 const PROTECTED = /^(main|master|production|prod)$/;
+// Repos whose normal workflow is a direct push to main (/sync-dotfiles). Force/delete stay blocked.
+const MAIN_PUSH_ALLOWED = /github\.com[:/]LeonardoChiarelli\/(claude-dotfiles|Codex-dotfiles)(\.git)?$/i;
 const FORCE_FLAGS = /^(--force|--force-with-lease(=.*)?|--force-if-includes|--mirror|--all|--delete|--prune|-d)$/;
 const DESTRUCTIVE = [
   /\bgit\b.*\breset\s+--hard\b/,
@@ -49,6 +51,14 @@ function currentBranch(cwd) {
   }
 }
 
+function remoteUrl(cwd, remote) {
+  try {
+    return execFileSync("git", ["remote", "get-url", remote], { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  } catch {
+    return "";
+  }
+}
+
 function checkPush(args, cwd) {
   const tokens = args.split(/\s+/).filter(Boolean).map(unquote);
   for (const t of tokens) {
@@ -56,6 +66,11 @@ function checkPush(args, cwd) {
   }
   const positional = tokens.filter((t) => !t.startsWith("-"));
   const refspecs = positional.slice(1); // positional[0] is the remote
+  for (const spec of refspecs) {
+    if (spec.startsWith("+")) deny(`refspec forcado '${spec}' bloqueado.`);
+    if (spec.startsWith(":")) deny(`delecao de branch remota '${spec}' bloqueada.`);
+  }
+  if (MAIN_PUSH_ALLOWED.test(remoteUrl(cwd, positional[0] ?? "origin"))) return;
   if (refspecs.length === 0) {
     const branch = currentBranch(cwd);
     if (!branch) deny("git push sem refspec e branch atual indeterminada.");

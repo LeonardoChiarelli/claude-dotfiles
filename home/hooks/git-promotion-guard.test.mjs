@@ -60,6 +60,17 @@ for (const cmd of [
   test(`allows: ${cmd}`, () => assert.equal(denied(cmd), false));
 }
 
+const dotfiles = repoOn("main");
+execFileSync("git", ["remote", "add", "origin", "https://github.com/LeonardoChiarelli/claude-dotfiles.git"], { cwd: dotfiles });
+test("allows push to main in dotfiles repo", () => assert.equal(denied("git push", dotfiles), false));
+test("allows explicit main push in dotfiles repo", () => assert.equal(denied("git push origin main", dotfiles), false));
+test("still blocks force push in dotfiles repo", () => assert.equal(denied("git push --force origin main", dotfiles), true));
+test("still blocks remote delete in dotfiles repo", () => assert.equal(denied("git push origin :main", dotfiles), true));
+
+const other = repoOn("main");
+execFileSync("git", ["remote", "add", "origin", "https://github.com/LeonardoChiarelli/claude-dotfiles-evil.git"], { cwd: other });
+test("does not allow lookalike remote", () => assert.equal(denied("git push", other), true));
+
 test("ignores malformed input", () => {
   const r = spawnSync(process.execPath, [hook], { encoding: "utf8", input: "{bad" });
   assert.equal(r.status, 0);
