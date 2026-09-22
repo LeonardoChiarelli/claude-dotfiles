@@ -15,4 +15,4 @@
 - [codex-dotfiles-repo](codex-dotfiles-repo.md) — são dois repos de dotfiles (claude-dotfiles + Codex-dotfiles); /sync-dotfiles cobre os dois
 - [model-roles-entrega](model-roles-entrega.md) — papéis Fable/Opus/Sonnet/Haiku ↔ Astra/Sol/Terra/Luna, skill /entrega, merge auto com CI verde, git-promotion-guard
 - [windows-shell-path-gotchas](windows-shell-path-gotchas.md) — ctx_execute shell manda /c/... pro git (vira C:\c\...); rtk distorce npm run lint
-- [codex-claude-integration-status](codex-claude-integration-status.md) — plano Codex+Claude fases 0-2 feitas 2026-09-21; 15 PRs Fase 0 travados por billing GitHub chiarelli-dev
+- [codex-claude-integration-status](codex-claude-integration-status.md) — plano Codex+Claude fases 0-2 feitas 2026-09-21; merge sem Actions (validação local); 8 PRs Fase 0 pendentes
