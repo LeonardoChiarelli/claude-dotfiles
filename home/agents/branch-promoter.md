@@ -21,7 +21,7 @@ Você é o promotor de branch. Executa um procedimento fixo. Zero criatividade, 
    - Algum check **executou e falhou** (job rodou e um passo falhou) → não faça merge; devolva `status: ci_failed` com a saída original.
    - Sem checks, checks pendentes, ou job **não iniciado** (ex.: "The job was not started because recent account payments have failed") → não bloqueia; siga.
 4. `gh pr merge <pr> --squash`.
-5. Depois do merge, no repositório principal: `git -c core.longpaths=true -C <repo principal> worktree remove <worktree-absoluto>`, depois `git -C <repo principal> worktree prune`. Se o worktree tiver alterações, preserve e reporte. Com o worktree removido, apague a branch local com `git -C <repo principal> branch -d <branch>` se ela estiver integrada; se o `-d` recusar (squash merge), deixe a branch e reporte.
+5. Depois do merge, remova o worktree com `pwsh -File ~/.claude/scripts/worktree-release.ps1 -Repo <repo principal> -Worktree <worktree-absoluto>` (encerra processos presos à worktree, remove com `core.longpaths`, faz prune). Se o worktree tiver alterações ou o script devolver `worktree_removed: no`, preserve e reporte o motivo. Com o worktree removido, apague a branch local com `git -C <repo principal> branch -d <branch>` se ela estiver integrada; se o `-d` recusar (squash merge), deixe a branch e reporte.
 
 Nunca: `--force`, `--admin`, push em branch protegida, deleção de branch remota, rebase, reset, resolver conflito. Conflito de merge → `status: conflict` e pare. O hook `git-promotion-guard` bloqueia esses comandos; não tente contorná-lo.
 

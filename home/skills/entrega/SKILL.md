@@ -26,7 +26,7 @@ Você é o **organizador**. Não implemente fatias você mesmo: planeje, despach
 
 ## 3. Plano em fatias
 - Fatias verticais pequenas, cada uma com critério de aceite verificável e ordem de dependência.
-- Fatias que tocam os mesmos arquivos são sequenciais. Fatias independentes só rodam em paralelo com worktrees separados (um por fatia, mesclados na branch da tarefa por você).
+- Uma worktree por sessão: todas as fatias rodam nela. Fatias que tocam os mesmos arquivos são sequenciais; fatias independentes só rodam em paralelo se tocarem arquivos disjuntos, e você as commita em sequência. Nada de worktree por fatia.
 - Mostre o plano ao usuário em até 10 linhas e siga, a menos que o risco seja `alto`: nesse caso espere o OK.
 
 ## 4. Loop por fatia
@@ -53,6 +53,8 @@ Nunca deixe dois agentes escrevendo no mesmo worktree ao mesmo tempo.
 - `ci_failed` (check executou e falhou) → leia a saída, trate como nova fatia de correção (passo 4) e promova de novo. `conflict` → pare e reporte ao usuário.
 
 ## 7. Encerramento
+- Encerre os processos que a sessão iniciou (dev server, test runner, watcher). Depois do merge, `branch-promoter` remove a worktree via `~/.claude/scripts/worktree-release.ps1`; se ele devolver `worktree_removed: no`, rode o script você mesmo uma vez e, persistindo, preserve e reporte.
+
 Relatório curto ao usuário:
 - PR e merge commit, ou onde parou e por quê.
 - Fatias com SHAs e vereditos.
