@@ -152,6 +152,6 @@ if (-not (Test-Path $localSettings)) {
 
 Write-Host ""
 Write-Step "==> Done. Final steps:"
-Write-Host "    1. Open Claude Code once - plugins in settings.json auto-install."
+Write-Host "    1. Open Claude Code once - settings.json is NOT versioned: set up plugins (/plugin), marketplaces, hooks and permissions manually."
 Write-Host "    2. MCP servers with OAuth (sentry, neon, context7) authenticate on first use."
 Write-Host "    3. Check output above for any [warn] lines."
