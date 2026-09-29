@@ -20,7 +20,7 @@ process.stdin.on('end', () => {
   const rel = path.relative(home, path.resolve(filePath));
   if (rel.startsWith('..') || path.isAbsolute(rel)) process.exit(0);
 
-  const watched = ['CLAUDE.md', 'RTK.md', 'settings.json', 'keybindings.json',
+  const watched = ['CLAUDE.md', 'RTK.md', 'keybindings.json',
     'skills', 'agents', 'hooks', 'outcomes'];
   const top = rel.split(/[\\/]/)[0];
   if (!watched.includes(top)) process.exit(0);
