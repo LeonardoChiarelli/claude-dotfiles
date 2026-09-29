@@ -16,3 +16,4 @@
 - [model-roles-entrega](model-roles-entrega.md) — papéis Fable/Opus/Sonnet/Haiku ↔ Astra/Sol/Terra/Luna, skill /entrega, merge auto com CI verde, git-promotion-guard
 - [windows-shell-path-gotchas](windows-shell-path-gotchas.md) — ctx_execute shell manda /c/... pro git (vira C:\c\...); rtk distorce npm run lint
 - [codex-claude-integration-status](codex-claude-integration-status.md) — plano Codex+Claude fases 0-2 feitas 2026-09-21; fases 0-2 concluídas; merge sem Actions (validação local)
+- [codex-daemon-console-windows](codex-daemon-console-windows.md) — janelas piscando ao abrir Codex CLI vêm do daemon 0.157+; daemon_auto_start=false não basta com daemon já rodando; stop + matar pid-update-loop
