@@ -50,4 +50,4 @@ install.ps1 / install.sh
 
 ## Testes
 
-`node tools/dotfiles.mjs roundtrip` — exporta, instala num dir temporário e compara byte a byte. `OK` = os dois caminhos funcionam.
+`node tools/dotfiles.mjs roundtrip`: exporta, instala num dir temporário e compara byte a byte. `OK` = os dois caminhos funcionam.
