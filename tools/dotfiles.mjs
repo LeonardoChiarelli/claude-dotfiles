@@ -19,10 +19,6 @@ const DRY = process.argv.includes('--dry-run');
 const NO_MCP = process.argv.includes('--no-mcp');
 
 const log = (tag, msg) => console.log(`[${tag}] ${msg}`);
-// A path as it appears inside a JSON string (backslashes doubled).
-const jsonEsc = (s) => JSON.stringify(s).slice(1, -1);
-// Windows path -> forward-slash form (Windows accepts '/' everywhere we use it).
-const toPosix = (s) => s.split('\\').join('/');
 const projectKey = (p) => p.replace(/[^a-zA-Z0-9]/g, '-');
 const memoryDir = (claudeHome) =>
   path.join(claudeHome, 'projects', projectKey(os.homedir()), 'memory');
@@ -73,63 +69,6 @@ function writeFile(dst, content) {
   fs.writeFileSync(dst, content);
 }
 
-// ── settings.json templating ────────────────────────────────────────────────
-// Machine-specific absolute paths <-> tokens, operating on the raw JSON text.
-// A Windows path can appear in two shapes inside that text: JSON-escaped
-// backslashes ("C:\\Users\\me\\.claude") or forward slashes ("C:/Users/me/.claude"),
-// and both are valid for the tools these commands invoke — so BOTH must be
-// tokenized or a machine path leaks into the repo. Rendering always emits the
-// forward-slash shape, which is the only one that works on every platform
-// (Windows accepts '/', Unix does not accept '\'). Reversible by construction:
-// sanitize(render(sanitize(x))) === sanitize(x).
-const TOKENS = ['CLAUDE_HOME', 'NODE'];
-// Path separators trailing a token, e.g. `{{CLAUDE_HOME}}\\hooks\\x.mjs` in the
-// raw JSON text (each `\\` is two characters there).
-const TOKEN_TAIL = new RegExp(`(\\{\\{(?:${TOKENS.join('|')})\\}\\})((?:\\\\\\\\[^"\\\\]*)*)`, 'g');
-
-function tokenValues(claudeHome) {
-  return [
-    [claudeHome, '{{CLAUDE_HOME}}'],
-    [process.execPath, '{{NODE}}'],
-  ];
-}
-function tokenPairs(claudeHome) {
-  const pairs = [];
-  for (const [real, token] of tokenValues(claudeHome)) {
-    pairs.push([jsonEsc(real), token]); // "C:\\Users\\me\\.claude"
-    pairs.push([toPosix(real), token]); // "C:/Users/me/.claude"
-  }
-  // Longest literal first: a shorter path that prefixes a longer one must not
-  // consume it (e.g. node installed under CLAUDE_HOME).
-  return pairs.sort((a, b) => b[0].length - a[0].length);
-}
-function sanitizeSettings(raw, claudeHome) {
-  let out = raw;
-  for (const [real, token] of tokenPairs(claudeHome)) out = out.split(real).join(token);
-  // Normalize the separators that follow a token so the rendered file is
-  // portable (Windows-only backslashes would break every hook on Unix).
-  return out.replace(TOKEN_TAIL, (_m, token, tail) => token + tail.split('\\\\').join('/'));
-}
-function renderSettings(raw, claudeHome) {
-  let out = raw;
-  for (const [real, token] of tokenValues(claudeHome)) {
-    out = out.split(token).join(jsonEsc(toPosix(real)));
-  }
-  return out;
-}
-
-// Guard for the repo constraint "no machine paths in the versioned settings":
-// returns the offending lines of `text` that still mention this machine's home.
-function machinePathHits(text, label) {
-  const home = os.homedir();
-  const forms = [...new Set([jsonEsc(home), toPosix(home), home])];
-  const hits = [];
-  text.split('\n').forEach((line, i) => {
-    if (forms.some((f) => line.includes(f))) hits.push(`${label}:${i + 1}: ${line.trim().slice(0, 160)}`);
-  });
-  return hits;
-}
-
 // ── mcp.json secret stripping ───────────────────────────────────────────────
 // Applied to env keys, header keys and argv flags alike: a credential reaches
 // the repo through whichever of the three the server happens to use.
@@ -164,15 +103,7 @@ function cmdExport() {
   for (const rel of srcFiles) {
     const src = path.join(CLAUDE_HOME, rel);
     const dst = path.join(HOME_MIRROR, rel);
-    if (manifest.templated.includes(rel)) {
-      const templated = sanitizeSettings(fs.readFileSync(src, 'utf8'), CLAUDE_HOME);
-      for (const hit of machinePathHits(templated, `home/${rel}`)) {
-        log('warn', `machine path survived tokenization — ${hit}`);
-      }
-      writeFile(dst, templated);
-    } else {
-      copyFile(src, dst);
-    }
+    copyFile(src, dst);
   }
   if (fs.existsSync(HOME_MIRROR)) {
     for (const rel of listManifestFiles(HOME_MIRROR)) {
@@ -242,13 +173,7 @@ function cmdInstall() {
   for (const rel of files) {
     const src = path.join(HOME_MIRROR, rel);
     const dst = path.join(CLAUDE_HOME, rel);
-    if (manifest.templated.includes(rel)) {
-      if (fs.existsSync(dst) && !DRY) fs.copyFileSync(dst, dst + '.bak');
-      writeFile(dst, renderSettings(fs.readFileSync(src, 'utf8'), CLAUDE_HOME));
-      log('ok', `${rel} rendered${fs.existsSync(dst + '.bak') ? ' (backup: ' + rel + '.bak)' : ''}`);
-    } else {
-      copyFile(src, dst);
-    }
+    copyFile(src, dst);
   }
   log('ok', `${files.length} files installed into ${CLAUDE_HOME}`);
 
@@ -284,18 +209,29 @@ function cmdInstall() {
     }
   }
 
-  // Plugins install themselves from settings.json; only warn about
-  // directory-source marketplaces that cannot exist on a fresh machine.
-  try {
-    const rendered = JSON.parse(renderSettings(
-      fs.readFileSync(path.join(HOME_MIRROR, 'settings.json'), 'utf8'), CLAUDE_HOME));
-    for (const [name, m] of Object.entries(rendered.extraKnownMarketplaces || {})) {
-      if (m.source?.source === 'directory' && !fs.existsSync(m.source.path)) {
-        log('warn', `marketplace ${name} uses a local directory source missing on this machine (${m.source.path}) — its plugins stay unavailable`);
+  log('note', 'settings.json is not versioned: configure plugins, marketplaces, hooks and permissions manually (see README)');
+}
+
+// settings.json / settings.local.json are machine-local and must never be
+// versioned. Fails the command if either shows up anywhere in the repo.
+function assertNoSettingsFiles() {
+  const found = [];
+  const visit = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (e.isDirectory()) {
+        if (!['node_modules', '.git', '.worktrees'].includes(e.name)) visit(path.join(dir, e.name));
+      } else if (['settings.json', 'settings.local.json'].includes(e.name.toLowerCase())) {
+        // Case-insensitive: on Windows/macOS `Settings.json` IS settings.json.
+        found.push(path.relative(REPO, path.join(dir, e.name)));
       }
     }
-  } catch { /* settings unreadable — skip plugin note */ }
-  log('ok', 'plugins: declared in settings.json (enabledPlugins) — open Claude Code once and they auto-install');
+  };
+  visit(REPO);
+  if (found.length) {
+    console.error('settings.json / settings.local.json must NEVER be versioned (machine-local). Remove:');
+    for (const f of found) console.error('  ' + f);
+    process.exit(1);
+  }
 }
 
 // ── roundtrip: export, install into a temp home, compare — proves both paths ─
@@ -312,26 +248,13 @@ function cmdRoundtrip() {
     process.exit(1);
   }
   let fail = 0;
-  // The exported templated files must carry tokens only — a machine path here
-  // means tokenization missed a shape (e.g. forward slashes) and the repo would
-  // ship a path that exists on no other machine.
-  for (const rel of manifest.templated) {
-    const mirrored = path.join(HOME_MIRROR, rel);
-    if (!fs.existsSync(mirrored)) continue;
-    for (const hit of machinePathHits(fs.readFileSync(mirrored, 'utf8'), `home/${rel}`)) {
-      console.error(`[FAIL] machine path in exported template: ${hit}`); fail++;
-    }
-  }
+  assertNoSettingsFiles();
   const srcFiles = listManifestFiles(CLAUDE_HOME);
   for (const rel of srcFiles) {
     const aPath = path.join(CLAUDE_HOME, rel);
     const bPath = path.join(tmp, rel);
     if (!fs.existsSync(bPath)) { console.error(`[FAIL] missing after install: ${rel}`); fail++; continue; }
-    if (manifest.templated.includes(rel)) {
-      const a = sanitizeSettings(fs.readFileSync(aPath, 'utf8'), CLAUDE_HOME);
-      const b = sanitizeSettings(fs.readFileSync(bPath, 'utf8'), tmp);
-      if (a !== b) { console.error(`[FAIL] templated mismatch: ${rel}`); fail++; }
-    } else if (!fs.readFileSync(aPath).equals(fs.readFileSync(bPath))) {
+    if (!fs.readFileSync(aPath).equals(fs.readFileSync(bPath))) {
       console.error(`[FAIL] content mismatch: ${rel}`); fail++;
     }
   }
@@ -356,7 +279,7 @@ function cmdRoundtrip() {
 const SECRET_LINE =
   /(key|token|secret|password|passwd|credential|authorization|bearer)[\w-]*["']?\s*[:=]\s*["']?(?:Bearer\s+|Basic\s+)?(?=[A-Za-z0-9_\-./+]*\d)[A-Za-z0-9_\-./+]{16,}/i;
 const SCAN_ALLOW = [
-  /\{\{SECRET:/, /\{\{CLAUDE_HOME\}\}/, /\{\{NODE\}\}/,
+  /\{\{SECRET:/,
   // `validKeys = util2.objectKeys(obj)`: the value is a call expression, not a
   // literal. Credentials are always literals, so this only clears code (it hit
   // the bundled zod in hooks/schema.bundle.*). A quoted value still gets flagged.
@@ -403,14 +326,7 @@ function cmdScan(fileArg) {
   if (fileArg) {
     hits = scanText(fs.readFileSync(fileArg, 'utf8'), fileArg);
   } else {
-    // Repo constraint: the versioned templates carry tokens, never machine paths.
-    for (const rel of manifest.templated) {
-      const mirrored = path.join(HOME_MIRROR, rel);
-      if (fs.existsSync(mirrored)) {
-        hits.push(...machinePathHits(fs.readFileSync(mirrored, 'utf8'), `home/${rel}`)
-          .map((h) => `machine path — ${h}`));
-      }
-    }
+    assertNoSettingsFiles();
     const mcpPath = path.join(REPO, 'mcp.json');
     if (fs.existsSync(mcpPath)) {
       try {

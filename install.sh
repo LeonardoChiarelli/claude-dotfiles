@@ -83,6 +83,6 @@ fi
 
 echo ""
 echo "==> Done. Final steps:"
-echo "    1. Open Claude Code once — plugins in settings.json auto-install."
+echo "    1. Open Claude Code once — settings.json is NOT versioned: set up plugins (/plugin), marketplaces, hooks and permissions manually."
 echo "    2. MCP servers with OAuth (sentry, neon, context7) authenticate on first use."
 echo "    3. Check output above for any [warn] lines."
