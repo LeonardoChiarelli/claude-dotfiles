@@ -220,7 +220,8 @@ function assertNoSettingsFiles() {
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
       if (e.isDirectory()) {
         if (!['node_modules', '.git', '.worktrees'].includes(e.name)) visit(path.join(dir, e.name));
-      } else if (e.name === 'settings.json' || e.name === 'settings.local.json') {
+      } else if (['settings.json', 'settings.local.json'].includes(e.name.toLowerCase())) {
+        // Case-insensitive: on Windows/macOS `Settings.json` IS settings.json.
         found.push(path.relative(REPO, path.join(dir, e.name)));
       }
     }

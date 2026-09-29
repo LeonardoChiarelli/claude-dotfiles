@@ -17,7 +17,8 @@ bash ~/dotfiles/claude/install.sh
 ```
 
 Pré-requisitos: git + Node.js. O installer:
-1. Copia `home/` → `~/.claude` seguindo `manifest.json`2. Faz merge de `memory/` → `~/.claude/projects/<key>/memory` (nunca apaga arquivo só-local)
+1. Copia `home/` → `~/.claude` seguindo `manifest.json`
+2. Faz merge de `memory/` → `~/.claude/projects/<key>/memory` (nunca apaga arquivo só-local)
 3. Registra MCP servers de `mcp.json` via `claude mcp add-json` (OAuth autentica no primeiro uso)
 4. Instala jq + rtk e configura o hook rtk em `settings.local.json` (machine-local)
 5. Manual: `settings.json` é local da máquina e NÃO é versionado. Em máquina nova, configure à mão plugins e marketplaces (`/plugin`), permissões e o registro dos hooks de `~/.claude/hooks` em `settings.json`
