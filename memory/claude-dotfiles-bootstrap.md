@@ -8,7 +8,7 @@ metadata:
   modified: 2026-08-09T04:09:21.132Z
 ---
 
-Desde 2026-08-09 o repo `LeonardoChiarelli/claude-dotfiles` (clone em `~/dotfiles/claude`) é o bootstrap completo da config do Claude Code: `manifest.json` dirige `tools/dotfiles.mjs` (subcomandos `export` / `install` / `scan` / `roundtrip`), `home/` espelha `~/.claude` (settings.json tokenizado com `{{CLAUDE_HOME}}`/`{{NODE}}`, nas formas backslash E forward-slash), `memory/` espelha a memória persistente, `mcp.json` lista MCP servers sem segredos (env + headers + args redigidos). Plugins viajam dentro do próprio settings.json (`enabledPlugins` + `extraKnownMarketplaces`) — não existe manifest separado de plugins.
+Desde 2026-08-09 o repo `LeonardoChiarelli/claude-dotfiles` (clone em `~/dotfiles/claude`) é o bootstrap completo da config do Claude Code: `manifest.json` dirige `tools/dotfiles.mjs` (subcomandos `export` / `install` / `scan` / `roundtrip`), `home/` espelha `~/.claude`, `memory/` espelha a memória persistente, `mcp.json` lista MCP servers sem segredos (env + headers + args redigidos). **Desde 2026-09-28 o `settings.json` NÃO é versionado** (decisão do usuário; PR claude-dotfiles #2): é local da máquina. Em máquina nova, plugins, marketplaces, hooks e permissões são configurados à mão. `scan` e `roundtrip` falham se um settings.json/settings.local.json aparecer no repo.
 
 Fluxo dia a dia: mudou skill/hook/agent/settings → hook `dotfiles-drift.mjs` (PostToolUse, 1x por sessão) lembra → rodar skill `/sync-dotfiles` (export → scan de segredos → diff → commit → push; nunca force). Máquina nova: clone + `install.ps1`/`install.sh` (`-DryRun`/`--dry-run` disponível).
 
