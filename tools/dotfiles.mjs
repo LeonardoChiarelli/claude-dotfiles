@@ -67,6 +67,20 @@ function lstatOrNull(p) {
   try { return fs.lstatSync(p); } catch { return null; }
 }
 
+function realpathOrNull(p) {
+  try { return fs.realpathSync(p); } catch { return null; }
+}
+
+// True when child is parent, or a path inside parent. realpath throws when
+// the path does not exist yet, so callers pass null for that case.
+function isInsideOrEqual(child, parent) {
+  const c = process.platform === 'win32' ? child.toLowerCase() : child;
+  const p = process.platform === 'win32' ? parent.toLowerCase() : parent;
+  if (c === p) return true;
+  const rel = path.relative(p, c);
+  return rel !== '' && !rel.startsWith('..') && !path.isAbsolute(rel);
+}
+
 function samePath(a, b) {
   const left = path.resolve(a);
   const right = path.resolve(b);
@@ -225,6 +239,17 @@ function shellArg(s) {
 // directory is left alone. A link that points somewhere else is also left alone.
 function ensureSharedSkillLinks() {
   const skillsRoot = path.join(CLAUDE_HOME, 'skills');
+  // ~/.claude/skills may already be the shared tree (a link to ~/.agents/skills,
+  // or a directory inside it). Linking skills/<name> from there writes the link
+  // into ~/.agents/skills/<name> and points it at itself (ELOOP), which then
+  // breaks the Codex installer. AGENTS_SKILLS often does not exist yet:
+  // realpath fails, this is not that alias, and the per-skill loop still runs.
+  const rootReal = realpathOrNull(skillsRoot);
+  const agentsReal = realpathOrNull(AGENTS_SKILLS);
+  if (rootReal && agentsReal && isInsideOrEqual(rootReal, agentsReal)) {
+    log('skip', `${skillsRoot} already resolves inside ${AGENTS_SKILLS}; not creating links`);
+    return;
+  }
   for (const skill of LINKED_SKILLS) {
     const dst = path.join(skillsRoot, skill);
     const target = path.join(AGENTS_SKILLS, skill);
@@ -332,12 +357,15 @@ function assertNoSettingsFiles() {
 function cmdRoundtrip() {
   cmdExport();
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'claude-dotfiles-rt-'));
+  const agentsTmp = fs.mkdtempSync(path.join(os.tmpdir(), 'claude-dotfiles-rt-agents-'));
   const r = spawnSync(
     process.execPath,
     [fileURLToPath(import.meta.url), 'install', '--no-mcp'],
-    { env: { ...process.env, CLAUDE_HOME: tmp }, stdio: 'inherit' },
+    { env: { ...process.env, CLAUDE_HOME: tmp, AGENTS_SKILLS: agentsTmp }, stdio: 'inherit' },
   );
   if (r.status !== 0) {
+    fs.rmSync(tmp, { recursive: true, force: true });
+    fs.rmSync(agentsTmp, { recursive: true, force: true });
     console.error('roundtrip: install failed');
     process.exit(1);
   }
@@ -362,6 +390,7 @@ function cmdRoundtrip() {
     }
   }
   fs.rmSync(tmp, { recursive: true, force: true });
+  fs.rmSync(agentsTmp, { recursive: true, force: true });
   if (fail) { console.error(`roundtrip: ${fail} mismatches`); process.exit(1); }
   console.log(`roundtrip: OK (${srcFiles.length} config files + memory verified)`);
 }

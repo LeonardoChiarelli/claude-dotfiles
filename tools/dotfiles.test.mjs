@@ -125,6 +125,49 @@ test('install skips a non-link file and a non-link directory', () => {
   assert.equal(fs.existsSync(path.join(agents, 'to-prd', 'SKILL.md')) && fs.readFileSync(path.join(agents, 'to-prd', 'SKILL.md'), 'utf8'), 'codex-owned\n');
 });
 
+test('install skips when skills root already points at agents skills', () => {
+  const claude = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-alias-'));
+  const agents = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-agents-'));
+  fs.mkdirSync(path.join(agents, 'to-issues'), { recursive: true });
+  fs.writeFileSync(path.join(agents, 'to-issues', 'SKILL.md'), 'codex-owned\n');
+  fs.symlinkSync(agents, path.join(claude, 'skills'), 'dir');
+
+  const before = fs.readdirSync(agents).sort();
+  const result = run(['install', '--no-mcp'], {
+    CLAUDE_HOME: claude,
+    AGENTS_SKILLS: agents,
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /\[skip\]/);
+  assert.doesNotMatch(result.stdout, /\[ok\]\s+linked /);
+  assert.deepEqual(fs.readdirSync(agents).sort(), before);
+  assert.equal(fs.lstatSync(path.join(claude, 'skills')).isSymbolicLink(), true);
+  assert.equal(fs.readFileSync(path.join(agents, 'to-issues', 'SKILL.md'), 'utf8'), 'codex-owned\n');
+  for (const name of fs.readdirSync(agents)) {
+    assert.equal(fs.lstatSync(path.join(agents, name)).isSymbolicLink(), false, name);
+  }
+  assert.equal(fs.existsSync(path.join(agents, 'entrega')), false);
+  assert.throws(
+    () => fs.statSync(path.join(agents, 'entrega')),
+    (err) => err.code === 'ENOENT',
+  );
+});
+
+test('install still links when the agents skills directory does not exist yet', () => {
+  const claude = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-missing-'));
+  const agents = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'cd-agents-')), 'skills');
+  assert.equal(fs.existsSync(agents), false);
+  const result = run(['install', '--no-mcp'], {
+    CLAUDE_HOME: claude,
+    AGENTS_SKILLS: agents,
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /does not exist yet/);
+  assert.match(result.stdout, /\[ok\]\s+linked skills\/to-issues/);
+  assert.equal(fs.lstatSync(path.join(claude, 'skills', 'to-issues')).isSymbolicLink(), true);
+  assert.doesNotMatch(result.stderr, /ELOOP/);
+});
+
 test('export dry-run does not copy a shared skill into the repo', () => {
   const claude = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-export-'));
   const skillDir = path.join(claude, 'skills', 'entrega');
