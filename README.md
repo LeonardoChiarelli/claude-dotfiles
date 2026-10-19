@@ -67,6 +67,18 @@ Em `~/.claude/settings.json`, mescle os dois eventos abaixo sem substituir hooks
 }
 ```
 
+## Paridade de skills e hooks
+
+O inventário local, sem plugins nem `synced/`, tem 43 skills em `~/.agents/skills` e 18 em `~/.claude/skills`. Nesta rodada, a organizadora expôs `shell` por junction, totalizando 19 skills locais compartilhadas; 24 não foram migradas. Isso não afirma que o Claude não disponha de equivalentes por plugins.
+
+`shell` permanece versionada no Codex, sem cópia no Claude. Se o destino ainda não existir, crie a junction sem sobrescrever nada:
+
+```powershell
+New-Item -ItemType Junction -Path "$env:USERPROFILE/.claude/skills/shell" -Target "$env:USERPROFILE/.agents/skills/shell"
+```
+
+As diferenças de hooks são deliberadamente específicas de cada host ou ficaram adiadas quando não triviais. Nesta rodada, apenas `auto-ffprobe.mjs` e `caption-readability.mjs` receberam o ajuste seguro de runner. `autopilot` segue adiada por política e CI, e os agentes de review ainda não foram verificados. O inventário confirma arquivos, mas descoberta nativa e E2E pelos harnesses ainda não foram comprovados.
+
 ## Testes
 
 `node tools/dotfiles.mjs roundtrip`: exporta, instala num dir temporário e compara byte a byte. `OK` = os dois caminhos funcionam.
