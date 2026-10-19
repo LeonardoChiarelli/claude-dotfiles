@@ -25,6 +25,15 @@ process.stdin.on('end', () => {
   const top = rel.split(/[\\/]/)[0];
   if (!watched.includes(top)) process.exit(0);
 
+  // Shared skills are links into ~/.agents/skills. Editing one must not nudge
+  // /sync-dotfiles, which would try to version Codex-owned bytes in this repo.
+  if (top === 'skills') {
+    const skillDir = path.join(home, 'skills', rel.split(/[\\/]/)[1] || '');
+    try {
+      if (fs.lstatSync(skillDir).isSymbolicLink()) process.exit(0);
+    } catch { /* a real skills write is still worth reporting */ }
+  }
+
   const flag = path.join(os.tmpdir(), `dotfiles-drift-${data.session_id || 'nosession'}`);
   if (fs.existsSync(flag)) process.exit(0);
   try { fs.writeFileSync(flag, '1'); } catch { /* best effort */ }

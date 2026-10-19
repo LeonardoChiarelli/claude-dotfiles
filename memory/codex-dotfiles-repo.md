@@ -20,3 +20,5 @@ Os dois usam `node tools/dotfiles.mjs export|scan|install`, mas os manifests tê
 **Why:** os manifests têm formatos diferentes, então um export manual do Codex usa flags diferentes do Claude. E por muito tempo `/sync-dotfiles` cobria só metade.
 
 **How to apply:** `/sync-dotfiles` já roda os dois. Export manual do Codex: `node ~/dotfiles/Codex/tools/dotfiles.mjs export && node ~/dotfiles/Codex/tools/dotfiles.mjs scan`. **Desde 2026-09-28 o `config.toml` e o `auth.json` NÃO são versionados** (decisão do usuário; PR Codex-dotfiles #3): export e install os pulam com aviso; `scan` e `verify` falham se aparecerem no repo. MCPs portáveis ficam em `mcp.json`.
+
+Desde 2026-10-19 (LEO-347, opção A) as skills compartilhadas têm uma fonte só: `~/.agents/skills`, versionada no Codex-dotfiles. O claude-dotfiles não carrega mais cópia de `home/skills/<skill>` para esses nomes. O installer só cria `~/.claude/skills/<skill>` como junction ou symlink quando o caminho não existe, e não sobrescreve diretório ou arquivo real. O export do Claude pula esses nomes. `shell` continua só no Codex e recebe o mesmo link.
