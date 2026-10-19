@@ -48,6 +48,25 @@ install.ps1 / install.sh
 - `mcp.json`: segredo em `env`, `headers` (ex.: `Authorization`) ou `args` (`--api-key`) vira `{{SECRET:...}}` no export; o installer pula esse server e manda registrar à mão.
 - Segredo detectado pelo scan aborta o commit. Sem exceção sem revisão humana.
 
+## Hook de documentação interna
+
+`home/CLAUDE.md` já importa `@~/.codex/AGENTS.md`, onde a avaliação obrigatória de documentação interna é definida. O hook `project-docs.mjs` só lembra essa decisão semântica ao agente: não lê arquivos, prompt, transcrição ou resposta final, não grava documentos nem mantém estado. Em `Stop`, ele bloqueia apenas quando `stop_hook_active` é exatamente `false`; a continuidade fica liberada para evitar recursão. Fechamentos abruptos e o disparo pelo harness real não são garantidos por este gate.
+
+Em `~/.claude/settings.json`, mescle os dois eventos abaixo sem substituir hooks já existentes:
+
+```json
+{
+  "hooks": {
+    "UserPromptSubmit": [{
+      "hooks": [{ "type": "command", "command": "node ~/.claude/hooks/project-docs.mjs", "timeout": 3 }]
+    }],
+    "Stop": [{
+      "hooks": [{ "type": "command", "command": "node ~/.claude/hooks/project-docs.mjs", "timeout": 3 }]
+    }]
+  }
+}
+```
+
 ## Testes
 
 `node tools/dotfiles.mjs roundtrip`: exporta, instala num dir temporário e compara byte a byte. `OK` = os dois caminhos funcionam.
