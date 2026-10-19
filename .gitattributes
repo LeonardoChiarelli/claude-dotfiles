@@ -1,0 +1,6 @@
+# Text files check out as LF on every platform, including Windows.
+# Git for Windows otherwise applies core.autocrlf and writes CRLF into the
+# worktree. The installer copies those bytes into ~/.claude. Shared skills are
+# junctions or symlinks into ~/.agents/skills, so a CRLF checkout would change
+# the single Codex-owned copy.
+* text=auto eol=lf

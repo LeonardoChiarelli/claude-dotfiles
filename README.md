@@ -17,25 +17,27 @@ bash ~/dotfiles/claude/install.sh
 ```
 
 Pré-requisitos: git + Node.js. O installer:
-1. Copia `home/` → `~/.claude` seguindo `manifest.json`
-2. Faz merge de `memory/` → `~/.claude/projects/<key>/memory` (nunca apaga arquivo só-local)
-3. Registra MCP servers de `mcp.json` via `claude mcp add-json` (OAuth autentica no primeiro uso)
-4. Instala jq + rtk e configura o hook rtk em `settings.local.json` (machine-local)
-5. Manual: `settings.json` é local da máquina e NÃO é versionado. Em máquina nova, configure à mão plugins e marketplaces (`/plugin`), permissões e o registro dos hooks de `~/.claude/hooks` em `settings.json`
+1. Copia `home/` → `~/.claude` seguindo `manifest.json`. Não copia o conteúdo das skills compartilhadas.
+2. Para cada skill compartilhada, garante `~/.claude/skills/<skill>` como symlink (macOS e Linux) ou junction (Windows) para `~/.agents/skills/<skill>`. O link só nasce se o caminho não existir. Diretório ou arquivo real no lugar do link vira `[conflict]` e fica como está.
+3. Faz merge de `memory/` → `~/.claude/projects/<key>/memory` (nunca apaga arquivo só-local)
+4. Registra MCP servers de `mcp.json` via `claude mcp add-json` (OAuth autentica no primeiro uso)
+5. Instala jq + rtk e configura o hook rtk em `settings.local.json` (machine-local)
+6. Manual: `settings.json` é local da máquina e NÃO é versionado. Em máquina nova, configure à mão plugins e marketplaces (`/plugin`), permissões e o registro dos hooks de `~/.claude/hooks` em `settings.json`
 
 `--dry-run` (sh) / `-DryRun` (ps1) mostra o plano sem executar.
 
 ## Dia a dia (sync máquina → repo)
 
-Mudou skill/hook/agent? Roda `/sync-dotfiles` dentro do Claude Code. Ele exporta pelo manifest, roda scan de segredos, mostra o diff e commita + pusha. O hook `dotfiles-drift.mjs` lembra você quando detectar mudança não sincronizada (1x por sessão).
+Mudou agent, hook ou outro arquivo só do Claude? Roda `/sync-dotfiles` dentro do Claude Code. Ele exporta pelo manifest, roda scan de segredos, mostra o diff e commita + pusha. O hook `dotfiles-drift.mjs` lembra você quando detectar mudança não sincronizada (1x por sessão). Skills compartilhadas não entram nesse export: o texto delas fica no Codex-dotfiles, e um link em `~/.claude/skills` não dispara o lembrete.
 
 Manual, sem Claude: `node tools/dotfiles.mjs export && node tools/dotfiles.mjs scan`, depois `git add -A && git commit && git push`.
 
 ## Layout
 
 ```
+.gitattributes  # texto em LF, inclusive no checkout do Windows
 manifest.json   # o que sincroniza (única fonte de verdade)
-home/           # espelho 1:1 de ~/.claude
+home/           # espelho de ~/.claude, sem cópia das skills compartilhadas
 memory/         # espelho da memória persistente
 mcp.json        # MCP servers user-scope, sem segredos (gerado)
 tools/dotfiles.mjs  # export | install | scan | roundtrip
@@ -67,18 +69,28 @@ Em `~/.claude/settings.json`, mescle os dois eventos abaixo sem substituir hooks
 }
 ```
 
-## Paridade de skills e hooks
+## Skills compartilhadas
 
-O inventário local, sem plugins nem `synced/`, tem 43 skills em `~/.agents/skills` e 18 em `~/.claude/skills`. Nesta rodada, a organizadora expôs `shell` por junction, totalizando 19 skills locais compartilhadas; 24 não foram migradas. Isso não afirma que o Claude não disponha de equivalentes por plugins.
+`~/.agents/skills` é a fonte única das skills que o Claude e o Codex usam juntos. O conteúdo mora no Codex-dotfiles (`skills/` instala em `~/.agents/skills`). Este repo não versiona cópia dessas skills. Agents, hooks, outcomes, scripts, `CLAUDE.md`, `RTK.md` e `memory/` continuam aqui: são config só do Claude.
 
-`shell` permanece versionada no Codex, sem cópia no Claude. Se o destino ainda não existir, crie a junction sem sobrescrever nada:
+No install, cada nome abaixo vira symlink ou junction, e só se `~/.claude/skills/<skill>` ainda não existir. Se no lugar houver diretório ou arquivo comum, o installer imprime `[conflict]` e segue, sem apagar e sem sobrescrever. Um link que já aponta para `~/.agents/skills/<skill>` é mantido. Um link que aponta para outro lugar também fica como está e entra no mesmo aviso.
 
-```powershell
-New-Item -ItemType Junction -Path "$env:USERPROFILE/.claude/skills/shell" -Target "$env:USERPROFILE/.agents/skills/shell"
-```
+Skills presentes nos dois repos: `academy-acervo`, `entrega`, `find-skills`, `git-guardrails`, `graphify`, `grill-with-docs`, `novo-projeto-chiarelli`, `remotion-best-practices`, `setup-engineering-pipeline`, `stripe-best-practices`, `stripe-projects`, `sync-dotfiles`, `to-issues`, `to-prd`, `triage`, `two-axis-review`, `upgrade-stripe`, `video-editor`.
 
-As diferenças de hooks são deliberadamente específicas de cada host ou ficaram adiadas quando não triviais. Nesta rodada, apenas `auto-ffprobe.mjs` e `caption-readability.mjs` receberam o ajuste seguro de runner. `autopilot` segue adiada por política e CI, e os agentes de review ainda não foram verificados. O inventário confirma arquivos, mas descoberta nativa e E2E pelos harnesses ainda não foram comprovados.
+`shell` existe só no Codex. O installer cria o mesmo tipo de link para ela, com a mesma regra de conflito, porque este repo nunca teve cópia dela.
+
+As outras skills do Codex não são ligadas daqui. Equivalente por plugin, quando existe, fica fora deste layout.
+
+## Fim de linha no Windows
+
+`.gitattributes` marca arquivo de texto com `eol=lf`. No Windows o Git deixa de gravar CRLF no checkout (`core.autocrlf`). Sem isso, o installer copiava CRLF para `~/.claude` e, através das junctions, alterava os arquivos físicos em `~/.agents/skills`.
+
+## Paridade de hooks
+
+As diferenças de hooks são específicas de cada host ou ficaram adiadas quando não triviais. `auto-ffprobe.mjs` e `caption-readability.mjs` receberam o ajuste seguro de runner. `autopilot` segue adiada por política e CI, e os agentes de review ainda não foram verificados. O inventário confirma arquivos, mas descoberta nativa e E2E pelos harnesses ainda não foram comprovados.
 
 ## Testes
 
 `node tools/dotfiles.mjs roundtrip`: exporta, instala num dir temporário e compara byte a byte. `OK` = os dois caminhos funcionam.
+
+`node --test tools/dotfiles.test.mjs` cobre o install das skills compartilhadas: dry-run sem gravar link, criação do symlink e conflito quando o destino já é arquivo ou diretório real.

@@ -12,11 +12,37 @@ import { execFileSync, spawnSync } from 'node:child_process';
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CLAUDE_HOME = process.env.CLAUDE_HOME || path.join(os.homedir(), '.claude');
 const CLAUDE_JSON = process.env.CLAUDE_JSON || path.join(os.homedir(), '.claude.json');
+const AGENTS_SKILLS = process.env.AGENTS_SKILLS || path.join(os.homedir(), '.agents', 'skills');
 const HOME_MIRROR = path.join(REPO, 'home');
 const MEMORY_MIRROR = path.join(REPO, 'memory');
 const manifest = JSON.parse(fs.readFileSync(path.join(REPO, 'manifest.json'), 'utf8'));
 const DRY = process.argv.includes('--dry-run');
 const NO_MCP = process.argv.includes('--no-mcp');
+
+// Skills that also live in Codex-dotfiles `skills/` and install to ~/.agents/skills.
+// This repo does not ship their bytes. `shell` is Codex-only (no copy was ever
+// stored here) and gets the same link, which the README already asked for.
+const SHARED_SKILLS = [
+  'academy-acervo',
+  'entrega',
+  'find-skills',
+  'git-guardrails',
+  'graphify',
+  'grill-with-docs',
+  'novo-projeto-chiarelli',
+  'remotion-best-practices',
+  'setup-engineering-pipeline',
+  'stripe-best-practices',
+  'stripe-projects',
+  'sync-dotfiles',
+  'to-issues',
+  'to-prd',
+  'triage',
+  'two-axis-review',
+  'upgrade-stripe',
+  'video-editor',
+];
+const LINKED_SKILLS = [...SHARED_SKILLS, 'shell'];
 
 const log = (tag, msg) => console.log(`[${tag}] ${msg}`);
 const projectKey = (p) => p.replace(/[^a-zA-Z0-9]/g, '-');
@@ -32,12 +58,27 @@ function excluded(relPath) {
   return false;
 }
 
+function isSharedSkillRel(relPath) {
+  const parts = relPath.split(/[\\/]/);
+  return parts[0] === 'skills' && SHARED_SKILLS.includes(parts[1]);
+}
+
+function lstatOrNull(p) {
+  try { return fs.lstatSync(p); } catch { return null; }
+}
+
+function samePath(a, b) {
+  const left = path.resolve(a);
+  const right = path.resolve(b);
+  return process.platform === 'win32' ? left.toLowerCase() === right.toLowerCase() : left === right;
+}
+
 // All files under root/rel (recursive), as root-relative paths, excludes applied.
 function walk(root, rel = '') {
   const out = [];
   for (const entry of fs.readdirSync(path.join(root, rel), { withFileTypes: true })) {
     const r = rel ? path.join(rel, entry.name) : entry.name;
-    if (excluded(r)) continue;
+    if (excluded(r) || isSharedSkillRel(r)) continue;
     if (entry.isDirectory()) out.push(...walk(root, r));
     else if (entry.isFile()) out.push(r);
   }
@@ -98,6 +139,14 @@ function redactArgs(args, name) {
 
 // ── export: machine -> repo (mirror with delete) ────────────────────────────
 function cmdExport() {
+  const skillsRoot = path.join(CLAUDE_HOME, 'skills');
+  if (lstatOrNull(skillsRoot)) {
+    for (const skill of SHARED_SKILLS) {
+      if (lstatOrNull(path.join(skillsRoot, skill))) {
+        log('skip', `home/skills/${skill} is shared and owned by Codex-dotfiles`);
+      }
+    }
+  }
   const srcFiles = listManifestFiles(CLAUDE_HOME);
   const seen = new Set(srcFiles);
   for (const rel of srcFiles) {
@@ -114,6 +163,13 @@ function cmdExport() {
     }
   }
   log('ok', `home/ mirrored (${srcFiles.length} files)`);
+  for (const skill of SHARED_SKILLS) {
+    const mirror = path.join(HOME_MIRROR, 'skills', skill);
+    if (!lstatOrNull(mirror)) continue;
+    if (DRY) log('dry', `delete home/skills/${skill}`);
+    else fs.rmSync(mirror, { recursive: true, force: true });
+    log('del', `home/skills/${skill} (shared skill, not versioned here)`);
+  }
 
   const memSrc = memoryDir(CLAUDE_HOME);
   if (fs.existsSync(memSrc)) {
@@ -163,6 +219,43 @@ function shellArg(s) {
   return "'" + str.split("'").join(`'\\''`) + "'";
 }
 
+// Point ~/.claude/skills/<skill> at ~/.agents/skills/<skill>. Create the link
+// only when the path is absent. A real directory or file is a conflict: report
+// it and leave it in place. An existing link that already targets the right
+// directory is left alone. A link that points somewhere else is also left alone.
+function ensureSharedSkillLinks() {
+  const skillsRoot = path.join(CLAUDE_HOME, 'skills');
+  for (const skill of LINKED_SKILLS) {
+    const dst = path.join(skillsRoot, skill);
+    const target = path.join(AGENTS_SKILLS, skill);
+    const st = lstatOrNull(dst);
+    if (!st) {
+      if (!lstatOrNull(target)) {
+        log('warn', `shared skill ${skill}: ${target} does not exist yet`);
+      }
+      if (DRY) {
+        log('dry', `link ${dst} -> ${target}`);
+        continue;
+      }
+      fs.mkdirSync(skillsRoot, { recursive: true });
+      try {
+        fs.symlinkSync(target, dst, process.platform === 'win32' ? 'junction' : 'dir');
+        log('ok', `linked skills/${skill} -> ${target}`);
+      } catch (err) {
+        log('warn', `shared skill ${skill}: could not link to ${target} (${err.message})`);
+      }
+      continue;
+    }
+    if (st.isSymbolicLink()) {
+      const current = path.resolve(path.dirname(dst), fs.readlinkSync(dst));
+      if (samePath(current, target)) log('skip', `skills/${skill} already links to ${target}`);
+      else log('conflict', `skills/${skill} already points at ${current}; expected ${target}; left unchanged`);
+      continue;
+    }
+    log('conflict', `skills/${skill} exists and is not a symlink or junction; left unchanged`);
+  }
+}
+
 // ── install: repo -> machine (merge, never delete machine-only files) ───────
 function cmdInstall() {
   const files = listManifestFiles(HOME_MIRROR);
@@ -176,6 +269,7 @@ function cmdInstall() {
     copyFile(src, dst);
   }
   log('ok', `${files.length} files installed into ${CLAUDE_HOME}`);
+  ensureSharedSkillLinks();
 
   if (fs.existsSync(MEMORY_MIRROR)) {
     const memDst = memoryDir(CLAUDE_HOME);
