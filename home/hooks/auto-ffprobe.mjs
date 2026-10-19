@@ -1,11 +1,12 @@
 import { execFileSync } from "node:child_process";
+import { pathToFileURL } from "node:url";
 
 export function producedOutputs(cmd) {
   if (!/\bffmpeg\b/.test(cmd)) return [];
   return cmd.split(/\s+/).filter((t) => /(^|[\/\\])out[\/\\].+\.mp4$/i.test(t));
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   let raw = "";
   process.stdin.on("data", (c) => (raw += c));
   process.stdin.on("end", () => {

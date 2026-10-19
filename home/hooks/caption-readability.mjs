@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 
 // Conta caracteres visíveis (sem tags ASS) por linha de Dialogue.
 export function longAssLines(ass, maxChars) {
@@ -15,7 +16,7 @@ export function longAssLines(ass, maxChars) {
   return bad;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   let raw = "";
   process.stdin.on("data", (c) => (raw += c));
   process.stdin.on("end", () => {
