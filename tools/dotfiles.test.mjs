@@ -168,6 +168,52 @@ test('install still links when the agents skills directory does not exist yet', 
   assert.doesNotMatch(result.stderr, /ELOOP/);
 });
 
+test('install continues when skills is a broken link to a missing agents tree', () => {
+  const claude = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-broken-'));
+  const agents = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'cd-agents-')), 'skills');
+  assert.equal(fs.existsSync(agents), false);
+  fs.symlinkSync(agents, path.join(claude, 'skills'), 'dir');
+
+  const result = run(['install', '--no-mcp'], {
+    CLAUDE_HOME: claude,
+    AGENTS_SKILLS: agents,
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /\[warn\].*run the Codex install first/);
+  assert.doesNotMatch(result.stdout, /\[ok\]\s+linked /);
+  assert.equal(fs.existsSync(agents), false);
+  assert.equal(fs.lstatSync(path.join(claude, 'skills')).isSymbolicLink(), true);
+  assert.equal(fs.existsSync(path.join(claude, 'CLAUDE.md')), true);
+  const mem = path.join(
+    claude,
+    'projects',
+    os.homedir().replace(/[^a-zA-Z0-9]/g, '-'),
+    'memory',
+    'MEMORY.md',
+  );
+  assert.equal(fs.existsSync(mem), true);
+  assert.match(result.stdout, /memory merged/);
+});
+
+test('install treats a ..shared directory as inside agents skills', () => {
+  const claude = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-dotdot-'));
+  const agents = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-agents-'));
+  const inside = path.join(agents, '..shared');
+  fs.mkdirSync(inside);
+  fs.writeFileSync(path.join(inside, 'keep.txt'), 'stay\n');
+  fs.symlinkSync(inside, path.join(claude, 'skills'), 'dir');
+
+  const result = run(['install', '--no-mcp'], {
+    CLAUDE_HOME: claude,
+    AGENTS_SKILLS: agents,
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /\[skip\]/);
+  assert.doesNotMatch(result.stdout, /\[ok\]\s+linked /);
+  assert.deepEqual(fs.readdirSync(inside), ['keep.txt']);
+  assert.equal(fs.readFileSync(path.join(inside, 'keep.txt'), 'utf8'), 'stay\n');
+});
+
 test('export dry-run does not copy a shared skill into the repo', () => {
   const claude = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-export-'));
   const skillDir = path.join(claude, 'skills', 'entrega');

@@ -78,7 +78,9 @@ function isInsideOrEqual(child, parent) {
   const p = process.platform === 'win32' ? parent.toLowerCase() : parent;
   if (c === p) return true;
   const rel = path.relative(p, c);
-  return rel !== '' && !rel.startsWith('..') && !path.isAbsolute(rel);
+  // '..shared' is a real directory name. Only '..' and '../...' escape parent.
+  const escapes = rel === '..' || rel.startsWith('..' + path.sep);
+  return rel !== '' && !escapes && !path.isAbsolute(rel);
 }
 
 function samePath(a, b) {
@@ -237,15 +239,31 @@ function shellArg(s) {
 // only when the path is absent. A real directory or file is a conflict: report
 // it and leave it in place. An existing link that already targets the right
 // directory is left alone. A link that points somewhere else is also left alone.
+function linkTargetOrNull(linkPath) {
+  try { return path.resolve(path.dirname(linkPath), fs.readlinkSync(linkPath)); }
+  catch { return null; }
+}
+
 function ensureSharedSkillLinks() {
   const skillsRoot = path.join(CLAUDE_HOME, 'skills');
   // ~/.claude/skills may already be the shared tree (a link to ~/.agents/skills,
   // or a directory inside it). Linking skills/<name> from there writes the link
   // into ~/.agents/skills/<name> and points it at itself (ELOOP), which then
-  // breaks the Codex installer. AGENTS_SKILLS often does not exist yet:
-  // realpath fails, this is not that alias, and the per-skill loop still runs.
+  // breaks the Codex installer.
+  const rootStat = lstatOrNull(skillsRoot);
   const rootReal = realpathOrNull(skillsRoot);
   const agentsReal = realpathOrNull(AGENTS_SKILLS);
+  // Broken link aimed at an agents tree that does not exist yet. mkdirSync on
+  // that path throws ENOENT and would abort install before memory and MCP.
+  // Warn, create nothing, and let the rest of install continue. Codex has to
+  // create ~/.agents/skills first.
+  if (rootStat && rootStat.isSymbolicLink() && !rootReal) {
+    const pointed = linkTargetOrNull(skillsRoot);
+    if (pointed && isInsideOrEqual(pointed, path.resolve(AGENTS_SKILLS))) {
+      log('warn', `${skillsRoot} is a broken link to ${AGENTS_SKILLS}; run the Codex install first; not creating links`);
+      return;
+    }
+  }
   if (rootReal && agentsReal && isInsideOrEqual(rootReal, agentsReal)) {
     log('skip', `${skillsRoot} already resolves inside ${AGENTS_SKILLS}; not creating links`);
     return;
