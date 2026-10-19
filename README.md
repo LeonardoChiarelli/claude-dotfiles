@@ -77,6 +77,12 @@ O inventário local, sem plugins nem `synced/`, tem 43 skills em `~/.agents/skil
 New-Item -ItemType Junction -Path "$env:USERPROFILE/.claude/skills/shell" -Target "$env:USERPROFILE/.agents/skills/shell"
 ```
 
+`padrao-observabilidade` (LEO-358) segue o mesmo modelo: fonte única no Codex, exposta ao Claude por link, sem cópia aqui. O hook `observability-lint.mjs` (só aviso) fica em `home/hooks/` e é registrado à mão no `settings.json`, no bloco `PostToolUse` com matcher `Edit|Write|MultiEdit`, ao lado do `check-emdash.mjs`:
+
+```powershell
+New-Item -ItemType SymbolicLink -Path "$env:USERPROFILE/.claude/skills/padrao-observabilidade" -Target "$env:USERPROFILE/.agents/skills/padrao-observabilidade"
+```
+
 As diferenças de hooks são deliberadamente específicas de cada host ou ficaram adiadas quando não triviais. Nesta rodada, apenas `auto-ffprobe.mjs` e `caption-readability.mjs` receberam o ajuste seguro de runner. `autopilot` segue adiada por política e CI, e os agentes de review ainda não foram verificados. O inventário confirma arquivos, mas descoberta nativa e E2E pelos harnesses ainda não foram comprovados.
 
 ## Testes
