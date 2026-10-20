@@ -76,7 +76,7 @@ npm install -g @trailhq/trail-code@0.23.0
 node "$HOME\.agents\skills\trail-code\scripts\install.mjs"
 ```
 
-O instalador cria a junction sem sobrescrever destino divergente, mescla os registros no `hooks.json` do Codex e no `settings.json` do Claude e persiste `trail telemetry disable`, preservando hooks, permissões, statusline e demais entradas. Na primeira sessão Codex após instalar ou alterar a definição, revise e aprove os quatro registros em `/hooks`; não contorne essa revisão com `--dangerously-bypass-hook-trust`. O Trail é mapa estrutural local somente. Não use `trail init`, learnings, MCP, cloud ou `--deep`.
+O instalador cria a junction sem sobrescrever destino divergente, mescla os registros no `hooks.json` do Codex e no `settings.json` do Claude e persiste `trail telemetry disable`, preservando hooks, permissões, statusline e demais entradas. Na primeira sessão Codex após instalar ou alterar a definição, revise e aprove os quatro registros em `/hooks`; não contorne essa revisão com `--dangerously-bypass-hook-trust`. O Trail é mapa estrutural local somente. Não use `trail init`, learnings, MCP, cloud ou `--deep`. A CLI fixada em 0.23.0 ainda pode consultar metadados públicos de versão no npm uma vez ao dia e gravar `~/.graft/update-check.json`; essa versão não oferece opt-out suportado para o upkeep e o wrapper não atualiza o pacote automaticamente.
 
 O registro Claude resultante usa estes eventos. O comando abaixo é esquemático; o instalador grava o caminho absoluto do host:
 
