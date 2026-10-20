@@ -69,6 +69,27 @@ Em `~/.claude/settings.json`, mescle os dois eventos abaixo sem substituir hooks
 
 ## Paridade de skills e hooks
 
+`trail-code` tem fonte única em `~/.agents/skills/trail-code`. Exponha-a ao Claude por junction, sem cópia:
+
+```powershell
+New-Item -ItemType Junction -Path "$env:USERPROFILE/.claude/skills/trail-code" -Target "$env:USERPROFILE/.agents/skills/trail-code"
+```
+
+O Trail é mapa estrutural local somente. Não use `trail init`, learnings, MCP, cloud ou `--deep`. Após instalar a skill, mescle os registros abaixo em `~/.claude/settings.json`, preservando entradas existentes. O hook recebe somente dados estruturados do evento, só opera dentro de uma raiz Git e usa `DO_NOT_TRACK=1` e `CI=1`:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [{ "hooks": [{ "type": "command", "command": "node ~/.agents/skills/trail-code/scripts/trail-code-hook.mjs", "timeout": 15 }] }],
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "node ~/.agents/skills/trail-code/scripts/trail-code-hook.mjs", "timeout": 15 }] }],
+    "PostToolUse": [{ "matcher": "Edit|Write|MultiEdit|Bash", "hooks": [{ "type": "command", "command": "node ~/.agents/skills/trail-code/scripts/trail-code-hook.mjs", "timeout": 15 }] }],
+    "Stop": [{ "hooks": [{ "type": "command", "command": "node ~/.agents/skills/trail-code/scripts/trail-code-hook.mjs", "timeout": 15 }] }]
+  }
+}
+```
+
+O hook pode falhar, expirar ou encontrar lock, e nesses casos não confirma frescor. `trail build --check --json` é o gate explícito. Diretórios ocultos não entram no mapa.
+
 O inventário local, sem plugins nem `synced/`, tem 43 skills em `~/.agents/skills` e 18 em `~/.claude/skills`. Nesta rodada, a organizadora expôs `shell` por junction, totalizando 19 skills locais compartilhadas; 24 não foram migradas. Isso não afirma que o Claude não disponha de equivalentes por plugins.
 
 `shell` permanece versionada no Codex, sem cópia no Claude. Se o destino ainda não existir, crie a junction sem sobrescrever nada:
