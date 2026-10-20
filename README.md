@@ -69,6 +69,30 @@ Em `~/.claude/settings.json`, mescle os dois eventos abaixo sem substituir hooks
 
 ## Paridade de skills e hooks
 
+`trail-code` tem fonte única em `~/.agents/skills/trail-code`. Exponha-a ao Claude por junction, sem cópia:
+
+```powershell
+npm install -g @trailhq/trail-code@0.23.0
+node "$HOME\.agents\skills\trail-code\scripts\install.mjs"
+```
+
+O instalador cria a junction sem sobrescrever destino divergente, mescla os registros no `hooks.json` do Codex e no `settings.json` do Claude e persiste `trail telemetry disable`, preservando hooks, permissões, statusline e demais entradas. Na primeira sessão Codex após instalar ou alterar a definição, revise e aprove os quatro registros em `/hooks`; não contorne essa revisão com `--dangerously-bypass-hook-trust`. O Trail é mapa estrutural local somente. Não use `trail init`, learnings, MCP, cloud ou `--deep`. A CLI fixada em 0.23.0 ainda pode consultar metadados públicos de versão no npm uma vez ao dia e gravar `~/.graft/update-check.json`; essa versão não oferece opt-out suportado para o upkeep e o wrapper não atualiza o pacote automaticamente.
+
+O registro Claude resultante usa estes eventos. O comando abaixo é esquemático; o instalador grava o caminho absoluto do host:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [{ "hooks": [{ "type": "command", "command": "node \"<HOME>/.agents/skills/trail-code/scripts/trail-code.mjs\" hook", "timeout": 125 }] }],
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "node \"<HOME>/.agents/skills/trail-code/scripts/trail-code.mjs\" hook", "timeout": 125 }] }],
+    "PostToolUse": [{ "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell", "hooks": [{ "type": "command", "command": "node \"<HOME>/.agents/skills/trail-code/scripts/trail-code.mjs\" hook", "timeout": 125 }] }],
+    "Stop": [{ "hooks": [{ "type": "command", "command": "node \"<HOME>/.agents/skills/trail-code/scripts/trail-code.mjs\" hook", "timeout": 125 }] }]
+  }
+}
+```
+
+Início, prompt e shell fazem somente o `check` leve pelo fingerprint do Trail 0.23.0, sem escrita. Edição por ferramenta estruturada faz `check -> build -> check`; `Stop` repete o ensure apenas quando uma edição estruturada anterior ficou pendente. Shell sem alvo estruturado não pode ser atribuído com segurança: depois de comando mutante, a skill exige `ensure` explícito. Antes da entrega, a skill exige `ensure` e `verify`; o gate aceita apenas o grafo íntegro e a ausência esperada de contexto no modo mapa. Falha, timeout ou lock não confirmam frescor. Diretórios ocultos não entram no mapa, e o wrapper rejeita cache desconhecido ou com links.
+
 O inventário local, sem plugins nem `synced/`, tem 43 skills em `~/.agents/skills` e 18 em `~/.claude/skills`. Nesta rodada, a organizadora expôs `shell` por junction, totalizando 19 skills locais compartilhadas; 24 não foram migradas. Isso não afirma que o Claude não disponha de equivalentes por plugins.
 
 `shell` permanece versionada no Codex, sem cópia no Claude. Se o destino ainda não existir, crie a junction sem sobrescrever nada:
