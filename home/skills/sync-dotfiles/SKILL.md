@@ -45,6 +45,7 @@ Rodar o ciclo abaixo **por alvo**, um de cada vez. Terminar um antes de começar
 
 - `settings.json` é local da máquina e não é versionado. Plugins, marketplaces, hooks e permissões são configurados à mão em máquina nova.
 - `scan` e `roundtrip` falham se um `settings.json`/`settings.local.json` aparecer no repo.
+- O export Claude não percorre junctions. Após o export e antes do scan, para as skills desta tarefa expostas por junction, copie explicitamente somente os arquivos autorizados da fonte canônica `~/.agents/skills/<nome>/` para `home/skills/<nome>/`, valide a paridade e não infira exclusão pela ausência no export. Não siga outros links nem copie arquivos pessoais.
 - `home/scripts/` carrega scripts de manutenção da máquina (ex.: `patch-vercel-cli-detect.mjs`). Arquivo novo em `~/.claude/scripts` viaja sozinho; diretório de topo novo em `~/.claude` só viaja se entrar no `include` do manifest.
 
 ### Alvo codex
