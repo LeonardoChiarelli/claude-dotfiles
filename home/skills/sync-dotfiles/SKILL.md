@@ -7,14 +7,14 @@ description: Export current ~/.claude, ~/.codex and portable ~/.cursor config to
 
 Sincroniza a config desta máquina para os repos de dotfiles (direção: máquina → repo; a direção repo → máquina é o installer).
 
-São **dois** alvos, um por harness. Rodar os dois por padrão. Se o usuário pedir explicitamente só um ("sincroniza o Claude"), rodar só aquele e dizer que o outro ficou de fora.
+São **dois** alvos de sync: Claude tem um alvo próprio, enquanto Codex e Cursor compartilham o alvo privado `codex`. Rodar os dois por padrão. Se o usuário pedir explicitamente só um ("sincroniza o Claude"), rodar só aquele e dizer que o outro ficou de fora.
 
 | alvo | dir do repo | fonte na máquina | repo |
 |---|---|---|---|
 | claude | `$CLAUDE_DOTFILES_DIR`, senão `~/dotfiles/claude` | `~/.claude` | `LeonardoChiarelli/claude-dotfiles` (público) |
 | codex | `$CODEX_DOTFILES_DIR`, senão `~/dotfiles/Codex` | `~/.codex` + `~/.agents/skills` + `~/.cursor` portátil | `LeonardoChiarelli/Codex-dotfiles` (privado) |
 
-Cursor é coberto pelo alvo privado `codex`; não existe um terceiro repositório. O export usa `CURSOR_HOME`, ou `~/.cursor` quando a variável não estiver definida, e mantém em `cursor/` somente `AGENTS.md`, `hooks/`, `rules/`, `commands/`, `agents/` e `skills/` permitidos pelo manifest, além de `hooks.template.json`. O `hooks.json` de runtime permanece local. Estado da IDE, autenticação, MCP, plugins, histórico, configurações locais e o bundle gerenciado `skills-cursor` ficam fora.
+Cursor é coberto pelo alvo privado `codex`; não existe um terceiro repositório. O export usa `CURSOR_HOME`, ou `~/.cursor` quando a variável não estiver definida, e mantém em `cursor/` somente `AGENTS.md`, `hooks/`, `rules/`, `commands/`, `agents/` e `skills/` permitidos pelo manifest, além de `hooks.template.json`. Um `AGENTS.md` próprio do Cursor só viaja quando já existe; o sync não o gera como cópia da política canônica. O `hooks.json` de runtime permanece local. Estado da IDE, autenticação, MCP, plugins, histórico, configurações locais e o bundle gerenciado `skills-cursor` ficam fora.
 
 Pular um alvo, sem tratar como erro, quando a fonte não existe nesta máquina (ex.: só Claude instalado). Reportar o pulo.
 
