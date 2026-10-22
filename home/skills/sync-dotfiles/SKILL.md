@@ -15,7 +15,7 @@ São **três** alvos de sync, nesta ordem: Codex, Cursor e Claude. Cada harness 
 | codex | `$CODEX_DOTFILES_DIR`, senão `~/dotfiles/Codex` | `~/.codex` + `~/.agents/skills` | `LeonardoChiarelli/Codex-dotfiles` (privado) |
 | cursor | `$CURSOR_DOTFILES_DIR`, senão `~/dotfiles/Cursor` | `~/.cursor` + snapshots gerados | `LeonardoChiarelli/Cursor-dotfiles` (privado) |
 
-O engine editável das regras, skills e três guards fica somente em `~/.codex` e `~/.agents/skills`. Antes do export Cursor, execute `node <CODEX_DOTFILES_DIR>/tools/dotfiles.mjs snapshot --target-repo <CURSOR_DOTFILES_DIR>` a partir do Codex já commitado: ele gera no Cursor os snapshots de engine, `home/`, skills e lock com `source.engineCommit` e hashes. Não edite esses snapshots manualmente. O perfil Cursor exporta só `~/.cursor` e não regrava snapshots.
+O engine editável fica em `Codex-dotfiles`: regras e guards vêm de `~/.codex`, e skills de `~/.agents/skills`. Antes do export Cursor, execute `node <CODEX_DOTFILES_DIR>/tools/dotfiles.mjs snapshot --target-repo <CURSOR_DOTFILES_DIR>` a partir do Codex já commitado: ele gera no Cursor os snapshots de engine, `home/`, skills e lock com `source.engineCommit` e hashes. Não edite esses snapshots manualmente. O perfil Cursor exporta só `~/.cursor` e não regrava snapshots.
 
 Pular um alvo, sem tratar como erro, quando a fonte não existe nesta máquina (ex.: só Claude instalado). Reportar o pulo.
 
@@ -32,7 +32,7 @@ Rode o ciclo na ordem Codex, Cursor e Claude. Termine um alvo antes do seguinte;
 7. **Commitar, push e propor:** antes do commit, confirme que o checkout está numa branch de feature. Faça um commit convencional em inglês para o diff próprio, push normal somente dessa branch e abra um PR após os gates aplicáveis. Não commite nem faça push direto na `main`, merge ou promoção sem a autorização aplicável.
 8. **Reportar** por alvo: arquivos alterados, hash do commit, status do push e estado do PR. Confirmar a paridade da fonte canônica com os espelhos Codex, Cursor e Claude, incluindo a junction Claude quando existir. No fim, um resumo dos três.
 
-## Depois dos dois alvos (uma vez)
+## Depois dos três alvos (uma vez)
 
 9. Kit candidate: depois de concluir os passos 1 a 8 nos três alvos e confirmar que o PR Codex foi integrado por squash, atualize `origin/main` e chame **uma vez** a skill `setup-ia-sanitize`, passando um clone ou worktree Codex com checkout na `main` atualizada, nunca a worktree de feature, e `$HOME/Documents/Business/chiarelli-dev/setup-ia-kit`. Se qualquer PR estiver aberto, reporte a etapa do kit como pendente e não crie candidato nem checkpoint. O kit não é o repositório Cursor, não duplique candidato ou checkpoint, e não publique nada sem o ok do Léo.
 
@@ -61,5 +61,5 @@ Rode o ciclo na ordem Codex, Cursor e Claude. Termine um alvo antes do seguinte;
 
 - O clone Cursor é autossuficiente para instalar o pacote, sem Codex CLI, `gh` ou acesso ao runtime Codex. Os snapshots são gerados antes do commit Cursor e sempre ancorados no SHA real do engine Codex.
 - `~/.cursor/hooks.json` é runtime local e nunca entra no repo. O `hooks.template.json` versionado registra apenas as entradas gerenciadas, que o instalador mescla antes de ativar os hooks, preservando plugins e registros locais.
-- Um `~/.cursor/AGENTS.md` próprio só viaja se já existir. O Cursor recebe a política compartilhada pelo snapshot do engine e não por uma cópia gerada de AGENTS.
+- Um `~/.cursor/AGENTS.md` próprio só viaja se já existir. O Cursor recebe a política compartilhada pelo snapshot em `home/AGENTS.md`, e não por uma ponte em `~/.cursor/AGENTS.md`.
 - Só os três guards compartilhados migram: `guard-edits`, `git-promotion-guard` e `validate-manifest`. Outros hooks não foram migrados retroativamente. Cloud Agents e SSH não usam a configuração global local.
