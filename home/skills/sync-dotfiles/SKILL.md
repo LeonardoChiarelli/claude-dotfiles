@@ -1,6 +1,6 @@
 ---
 name: sync-dotfiles
-description: Export current ~/.claude and ~/.codex config (skills, agents, hooks, settings, outcomes, memory, MCP list) to the claude-dotfiles and Codex-dotfiles repos, review the owned diff and scan for secrets. Use when Claude or Codex config changed on this machine, when the drift hook warns about it, or when the user asks to sync/backup harness config.
+description: Export current ~/.claude, ~/.codex and portable ~/.cursor config to the claude-dotfiles and Codex-dotfiles repos, review the owned diff and scan for secrets. Use when Claude, Codex or Cursor config changed on this machine, when the drift hook warns about it, or when the user asks to sync/backup harness config.
 ---
 
 # sync-dotfiles
@@ -12,7 +12,9 @@ São **dois** alvos, um por harness. Rodar os dois por padrão. Se o usuário pe
 | alvo | dir do repo | fonte na máquina | repo |
 |---|---|---|---|
 | claude | `$CLAUDE_DOTFILES_DIR`, senão `~/dotfiles/claude` | `~/.claude` | `LeonardoChiarelli/claude-dotfiles` (público) |
-| codex | `$CODEX_DOTFILES_DIR`, senão `~/dotfiles/Codex` | `~/.codex` + `~/.agents/skills` | `LeonardoChiarelli/Codex-dotfiles` (privado) |
+| codex | `$CODEX_DOTFILES_DIR`, senão `~/dotfiles/Codex` | `~/.codex` + `~/.agents/skills` + `~/.cursor` portátil | `LeonardoChiarelli/Codex-dotfiles` (privado) |
+
+Cursor é coberto pelo alvo privado `codex`; não existe um terceiro repositório. O export usa `CURSOR_HOME`, ou `~/.cursor` quando a variável não estiver definida, e mantém em `cursor/` somente `AGENTS.md`, `hooks/`, `rules/`, `commands/`, `agents/` e `skills/` permitidos pelo manifest, além de `hooks.template.json`. O `hooks.json` de runtime permanece local. Estado da IDE, autenticação, MCP, plugins, histórico, configurações locais e o bundle gerenciado `skills-cursor` ficam fora.
 
 Pular um alvo, sem tratar como erro, quando a fonte não existe nesta máquina (ex.: só Claude instalado). Reportar o pulo.
 
@@ -24,7 +26,7 @@ Rodar o ciclo abaixo **por alvo**, um de cada vez. Terminar um antes de começar
 2. **Atualizar antes de exportar:** antes de qualquer pull ou export, confirme a árvore limpa. Em clone compartilhado, rode `git -C <dir> pull --ff-only`; em worktree de entrega, confirme também a base autorizada. Se houver divergência ou alteração prévia, PARE e reporte. Nunca force.
 3. **Exportar:** `node <dir>/tools/dotfiles.mjs export`. Mostrar o resumo do output.
 4. **Scan de segredos:** `node <dir>/tools/dotfiles.mjs scan`. Se sair com código diferente de 0, PARE: reporte somente os caminhos que a própria ferramenta apresentar; inclua linha e categoria apenas quando já vierem na saída, sem abrir o achado nem reproduzir trecho ou valor, e aguarde decisão do usuário. Nunca commite conteúdo flagrado sem aprovação explícita.
-5. **Revisar:** mostrar `git -C <dir> status --short` e `git -C <dir> diff --stat`. Ler o diff completo de hooks e skills antes de commitar, não só o diffstat. `settings.json` e `config.toml` NÃO são versionados e nunca devem aparecer no diff.
+5. **Revisar:** mostrar `git -C <dir> status --short` e `git -C <dir> diff --stat`. Ler o diff completo de hooks e skills antes de commitar, não só o diffstat. No alvo Codex, revisar também o diff de `cursor/`, incluindo os adapters `cursor/hooks/cursor-session-context.mjs` e `cursor/hooks/cursor-pretool-adapter.mjs`. `settings.json`, `config.toml` e `auth.json` NÃO são versionados e nunca devem aparecer no diff.
 6. **Isolar o diff próprio:** stage apenas os arquivos desta tarefa. Se o export gerar drift alheio, preserve-o fora do stage e reverta somente os artefatos gerados por este export, nunca a fonte na máquina. Não use `git add -A`, nem “commit tudo”.
 7. **Commitar, push e propor:** antes do commit, confirme que o checkout está numa branch de feature. Faça um commit convencional em inglês para o diff próprio, push normal somente dessa branch e abra um PR após os gates aplicáveis. Não commite nem faça push direto na `main`, merge ou promoção sem a autorização aplicável.
 8. **Reportar** por alvo: arquivos alterados, hash do commit, status do push e estado do PR. No fim, um resumo dos dois.
@@ -53,3 +55,8 @@ Rodar o ciclo abaixo **por alvo**, um de cada vez. Terminar um antes de começar
 - `config.toml` e `auth.json` NÃO são versionados: export e install os pulam com aviso.
 - `scan` e `verify` falham se algum aparecer no repo. MCPs portáveis vivem em `mcp.json`.
 - Os skills do Codex vêm de `~/.agents/skills`, não de `~/.codex/skills`.
+- Cursor descobre `~/.agents/skills` nativamente. Não copie essas skills canônicas para `~/.cursor/skills`; `cursor/skills` só comporta conteúdo que pertença de fato ao Cursor e passe na allowlist. O bundle `~/.cursor/skills-cursor` é gerenciado pelo Cursor e permanece excluído.
+- O instalador mescla de forma idempotente `cursor/hooks.template.json` no `~/.cursor/hooks.json` local, somente para as entradas gerenciadas pelo repositório e preservando plugins e hooks locais. O export não absorve o registro de runtime nem entradas de plugins.
+- A configuração global do Cursor usa `AGENTS.md` e `RTK.md` canônicos no `sessionStart` por `additional_context`, além dos três guards de `preToolUse`: `guard-edits`, `git-promotion-guard` e `validate-manifest`. Isso não é promessa de paridade total de eventos, modelos ou demais hooks com Codex e Claude: os outros hooks não foram migrados retroativamente.
+- O smoke nativo do Cursor Desktop 3.26.16 ainda está pendente porque a CLI do Agent não está instalada nesta máquina. Cloud Agents e sessões remotas por SSH não cobrem hooks ou skills globais de `~/.cursor`.
+- Fontes oficiais: [hooks](https://cursor.com/docs/hooks), [skills](https://cursor.com/docs/skills) e [rules](https://cursor.com/docs/rules).
