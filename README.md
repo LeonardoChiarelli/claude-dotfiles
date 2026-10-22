@@ -27,9 +27,9 @@ Pré-requisitos: git + Node.js. O installer:
 
 ## Dia a dia (sync máquina → repo)
 
-Mudou skill/hook/agent? Roda `/sync-dotfiles` dentro do Claude Code. Ele exporta pelo manifest, roda scan de segredos, mostra o diff e commita + pusha. O hook `dotfiles-drift.mjs` lembra você quando detectar mudança não sincronizada (1x por sessão).
+Mudou skill/hook/agent? Roda `/sync-dotfiles` dentro do Claude Code. O fluxo usa três alvos na ordem Codex, Cursor e Claude. Depois do commit do engine Codex, o snapshot gera o pacote autossuficiente do Cursor e seu lock; em seguida, o perfil Cursor exporta apenas `~/.cursor`; por último, o Claude exporta pelo manifest. Cada alvo roda scan, revisão do diff próprio e commit em branch de feature. O hook `dotfiles-drift.mjs` lembra você quando detectar mudança não sincronizada (1x por sessão).
 
-Manual, sem Claude: `node tools/dotfiles.mjs export && node tools/dotfiles.mjs scan`, depois `git add -A && git commit && git push`.
+Manual, sem Claude: `node tools/dotfiles.mjs export && node tools/dotfiles.mjs scan`, depois faça stage explícito apenas dos arquivos próprios em uma branch de feature, crie o commit e abra um PR, sem push direto na `main`.
 
 ## Layout
 
