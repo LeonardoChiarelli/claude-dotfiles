@@ -29,7 +29,7 @@ Pré-requisitos: git + Node.js. O installer:
 
 Mudou skill/hook/agent? Roda `/sync-dotfiles` dentro do Claude Code. Ele exporta os dois alvos pelo manifest, inclusive o conteúdo portátil de `~/.cursor` no alvo privado Codex, roda scan de segredos, mostra o diff e commita + pusha. O hook `dotfiles-drift.mjs` lembra você quando detectar mudança não sincronizada (1x por sessão).
 
-Manual, sem Claude: `node tools/dotfiles.mjs export && node tools/dotfiles.mjs scan`, depois `git add -A && git commit && git push`.
+Manual, sem Claude: `node tools/dotfiles.mjs export && node tools/dotfiles.mjs scan`, depois faça stage explícito apenas dos arquivos próprios em uma branch de feature, crie o commit e abra um PR, sem push direto na `main`.
 
 ## Layout
 
