@@ -1,5 +1,6 @@
-const HEADER = /^\*\*\* (Add|Update|Delete) File: (.+)$/;
-const MOVE = /^\*\*\* Move to: (.+)$/;
+const HEADER = /^\s*\*\*\*\s+(Add|Update|Delete)\s+File:\s*(.+?)\s*$/;
+const MOVE = /^\s*\*\*\*\s+Move\s+to:\s*(.+?)\s*$/;
+const MARKER = /^\s*\*\*\*\s/;
 
 function addedContent(lines) {
   return lines
@@ -18,16 +19,16 @@ export function patchTargets(command) {
     const header = lines[index].match(HEADER);
     if (header) {
       const type = header[1].toLowerCase();
-      const target = { type, path: header[2] };
+      const target = { type, path: header[2].trim() };
       if (type === "add") {
-        const end = lines.slice(index + 1).findIndex((line) => line.startsWith("*** "));
+        const end = lines.slice(index + 1).findIndex((line) => MARKER.test(line));
         target.content = addedContent(lines.slice(index + 1, end < 0 ? undefined : index + 1 + end));
       }
       targets.push(target);
       continue;
     }
     const move = lines[index].match(MOVE);
-    if (move) targets.push({ type: "move", path: move[1] });
+    if (move) targets.push({ type: "move", path: move[1].trim() });
   }
   return targets;
 }

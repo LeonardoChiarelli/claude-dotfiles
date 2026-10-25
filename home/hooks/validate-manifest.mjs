@@ -1,5 +1,6 @@
 import { pathToFileURL } from "node:url";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
+import path from "node:path";
 import { patchTargets } from "./patch-targets.mjs";
 
 // Carrega o schema de forma fail-closed: se dist/ não estiver disponível, bloqueia em vez de crashar.
@@ -32,7 +33,18 @@ function looksLikeVideoManifest(content) {
   ).length >= 2;
 }
 
-function validateApplyPatch(command) {
+function resolvePatchTarget(filePath, cwd) {
+  if (path.isAbsolute(filePath)) return filePath;
+  const base = cwd === undefined || cwd === null || cwd === "" ? process.cwd() : cwd;
+  if (typeof base !== "string") throw new Error("cwd inválido no payload do apply_patch");
+  const resolvedBase = path.resolve(base);
+  try {
+    if (statSync(resolvedBase).isDirectory()) return path.resolve(resolvedBase, filePath);
+  } catch { /* falha fechada abaixo */ }
+  throw new Error("cwd inválido no payload do apply_patch");
+}
+
+function validateApplyPatch(command, cwd) {
   for (const target of patchTargets(command)) {
     if (!isManifestPath(target.path)) continue;
     if (target.type === "add" && looksLikeVideoManifest(target.content || "")) {
@@ -47,7 +59,8 @@ function validateApplyPatch(command) {
       continue;
     }
     if (target.type === "update") {
-      const previous = existsSync(target.path) ? readFileSync(target.path, "utf8") : "";
+      const manifestPath = resolvePatchTarget(target.path, cwd);
+      const previous = existsSync(manifestPath) ? readFileSync(manifestPath, "utf8") : "";
       if (looksLikeVideoManifest(previous)) {
         return "manifest de vídeo por apply_patch Update não pode ser reconstruído com segurança; use Edit ou Write para validação.";
       }
@@ -62,10 +75,11 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   let raw = "";
   process.stdin.on("data", (c) => (raw += c));
   process.stdin.on("end", () => {
-    const { tool_name, tool_input } = JSON.parse(raw || "{}");
+    const payload = JSON.parse(raw || "{}");
+    const { tool_name, tool_input } = payload;
     if (tool_name === "apply_patch") {
       try {
-        const message = validateApplyPatch(tool_input?.command);
+        const message = validateApplyPatch(tool_input?.command, payload?.cwd);
         if (message) {
           process.stderr.write(`BLOCKED: ${message}\n`);
           process.exit(2);
