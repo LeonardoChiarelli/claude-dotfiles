@@ -1,5 +1,6 @@
 // Bloqueia qualquer escrita/overwrite dentro de footage/ (footage = imutável).
 import { pathToFileURL } from "node:url";
+import { patchTargets } from "./patch-targets.mjs";
 
 const FOOTAGE_RE = /(^|[\/\\])footage[\/\\]/i;
 
@@ -23,6 +24,9 @@ function invokesFFmpeg(cmd) {
 export function violatesFootageGuard(toolName, input = {}) {
   if (toolName === "Write" || toolName === "Edit") {
     return FOOTAGE_RE.test(input.file_path || "");
+  }
+  if (toolName === "apply_patch") {
+    return patchTargets(input.command).some(({ path }) => FOOTAGE_RE.test(path));
   }
   if (toolName === "Bash") {
     const cmd = input.command || "";
