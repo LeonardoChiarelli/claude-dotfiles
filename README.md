@@ -114,3 +114,5 @@ As diferenças de hooks são deliberadamente específicas de cada host ou ficara
 ## Testes
 
 `node tools/dotfiles.mjs roundtrip`: exporta, instala num dir temporário e compara byte a byte. `OK` = os dois caminhos funcionam.
+
+Atenção: o roundtrip reexporta o worktree e ignora skills expostas por junction. Portanto, `OK` não comprova que essas skills foram incluídas. Depois de copiar somente as skills autorizadas, compare seus hashes com a fonte canônica.

@@ -1,5 +1,7 @@
 import { pathToFileURL } from "node:url";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
+import path from "node:path";
+import { patchTargets } from "./patch-targets.mjs";
 
 // Carrega o schema de forma fail-closed: se dist/ não estiver disponível, bloqueia em vez de crashar.
 let manifestSchema;
@@ -21,13 +23,73 @@ export function manifestErrors(obj) {
   return r.success ? [] : r.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`);
 }
 
+function isManifestPath(filePath) {
+  return /(?:^|[\\/])manifest\.json$/i.test(filePath) || /^manifest\.json$/i.test(filePath);
+}
+
+function looksLikeVideoManifest(content) {
+  return ["source", "profiles", "timeline"].filter((field) =>
+    new RegExp(`"${field}"\\s*:`).test(content)
+  ).length >= 2;
+}
+
+function resolvePatchTarget(filePath, cwd) {
+  if (path.isAbsolute(filePath)) return filePath;
+  const base = cwd === undefined || cwd === null || cwd === "" ? process.cwd() : cwd;
+  if (typeof base !== "string") throw new Error("cwd inválido no payload do apply_patch");
+  const resolvedBase = path.resolve(base);
+  try {
+    if (statSync(resolvedBase).isDirectory()) return path.resolve(resolvedBase, filePath);
+  } catch { /* falha fechada abaixo */ }
+  throw new Error("cwd inválido no payload do apply_patch");
+}
+
+function validateApplyPatch(command, cwd) {
+  for (const target of patchTargets(command)) {
+    if (!isManifestPath(target.path)) continue;
+    if (target.type === "add" && looksLikeVideoManifest(target.content || "")) {
+      let obj;
+      try {
+        obj = JSON.parse(target.content);
+      } catch (error) {
+        return `manifest de vídeo não é JSON válido (${error.message}).`;
+      }
+      const errors = manifestErrors(obj);
+      if (errors.length) return `manifest de vídeo inválido:\n- ${errors.join("\n- ")}`;
+      continue;
+    }
+    if (target.type === "update") {
+      const manifestPath = resolvePatchTarget(target.path, cwd);
+      const previous = existsSync(manifestPath) ? readFileSync(manifestPath, "utf8") : "";
+      if (looksLikeVideoManifest(previous)) {
+        return "manifest de vídeo por apply_patch Update não pode ser reconstruído com segurança; use Edit ou Write para validação.";
+      }
+    }
+  }
+  return "";
+}
+
 // Runner (só quando executado como hook, não em teste)
 // Usa pathToFileURL para comparação robusta no Windows (backslashes vs forward slashes).
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   let raw = "";
   process.stdin.on("data", (c) => (raw += c));
   process.stdin.on("end", () => {
-    const { tool_name, tool_input } = JSON.parse(raw || "{}");
+    const payload = JSON.parse(raw || "{}");
+    const { tool_name, tool_input } = payload;
+    if (tool_name === "apply_patch") {
+      try {
+        const message = validateApplyPatch(tool_input?.command, payload?.cwd);
+        if (message) {
+          process.stderr.write(`BLOCKED: ${message}\n`);
+          process.exit(2);
+        }
+      } catch (error) {
+        process.stderr.write(`BLOCKED: falha ao verificar apply_patch para manifest.json (${error.message}).\n`);
+        process.exit(2);
+      }
+      process.exit(0);
+    }
     const fp = tool_input?.file_path || "";
     if ((tool_name === "Write" || tool_name === "Edit") && /manifest\.json$/.test(fp)) {
       // Write: conteúdo no input; Edit: relê o arquivo final

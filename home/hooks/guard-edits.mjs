@@ -7,17 +7,23 @@
 // Project-specific guards (import boundaries, forbidden paths, etc.) live in the
 // project's own .claude/hooks and run in addition to this global one.
 
+import { patchTargets } from "./patch-targets.mjs";
+
 let raw = "";
 process.stdin.on("data", (c) => (raw += c));
 process.stdin.on("end", () => {
   try {
     const payload = JSON.parse(raw || "{}");
     const ti = payload?.tool_input ?? {};
-    const filePath = ti.file_path ?? "";
-    const base = String(filePath).split(/[\\/]/).pop() ?? "";
+    const paths = payload?.tool_name === "apply_patch"
+      ? patchTargets(ti.command).map(({ path }) => path)
+      : [ti.file_path ?? ""];
+    const blocked = paths.find((filePath) => {
+      const base = String(filePath).split(/[\\/]/).pop() ?? "";
+      return base !== ".env.example" && base !== ".env.sample" && /^\.env($|\.)/.test(base);
+    });
 
-    if (base === ".env.example" || base === ".env.sample") process.exit(0); // safe templates
-    if (/^\.env($|\.)/.test(base)) {
+    if (blocked) {
       process.stdout.write(
         JSON.stringify({
           hookSpecificOutput: {
