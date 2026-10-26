@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "capabilities": { "scheduler": "pending", "gmail": "pending", "claudeCli": "pending", "grok": "pending" },
+  "evidence": "private-state-only"
+}

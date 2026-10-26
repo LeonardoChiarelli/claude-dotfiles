@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Setup learning candidate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "patternKey", "scope", "artifactKind", "status", "sourceEventIds", "baselineHash", "diffHash", "policyVersion", "version"],
+  "properties": {
+    "id": { "$ref": "#/$defs/identifier" },
+    "patternKey": { "$ref": "#/$defs/identifier" },
+    "scope": { "$ref": "#/$defs/scope" },
+    "artifactKind": { "enum": ["skill", "hook", "agents", "mcp"] },
+    "status": { "enum": ["candidate", "pending", "rejected", "local_applied", "synced", "merged", "remote_active", "rolled_back"] },
+    "sourceEventIds": { "type": "array", "items": { "$ref": "#/$defs/identifier" }, "minItems": 1, "uniqueItems": true },
+    "baselineHash": { "type": ["string", "null"] }, "diffHash": { "type": ["string", "null"] },
+    "policyVersion": { "type": "string", "minLength": 1, "maxLength": 1024 }, "version": { "type": "integer", "minimum": 0 }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "status": { "enum": ["candidate", "pending", "rejected"] },
+        "baselineHash": { "const": null },
+        "diffHash": { "const": null }
+      }
+    },
+    {
+      "properties": {
+        "baselineHash": { "$ref": "#/$defs/hash" },
+        "diffHash": { "$ref": "#/$defs/hash" }
+      }
+    }
+  ],
+  "$defs": {
+    "identifier": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$" },
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "scope": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "global" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "repo"], "properties": { "kind": { "const": "repo" }, "repo": { "$ref": "#/$defs/identifier" } } }
+      ]
+    }
+  }
+}
