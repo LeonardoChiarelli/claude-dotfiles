@@ -52,8 +52,10 @@ Se qualquer atualização obrigatória do Linear falhar, preserve os artefatos j
 
 ## 5. Revisão consolidada (`slice-reviewer`)
 - Mova a issue para `In Review` antes de iniciar esta etapa.
-- Fixe `base_sha` em `origin/<base>` e `head_sha` em `HEAD`; despache `slice-reviewer` uma vez com worktree, branch, esses SHAs, todos os critérios e fora de escopo da issue, relatórios de todas as fatias e o diff completo `base_sha...head_sha`.
+- Fixe `base_sha` em `origin/<base>` e `head_sha` em `HEAD`.
 - Risco `médio` ou `alto`: faça revisão cruzada pelo outro fornecedor, via `/codex:review` no Claude ou pela skill `consult-claude` em modo `review` no Codex, sobre o diff contra a base, e registre no corpo do PR (seção "Revisão cruzada"). Risco `alto`: despache também `security-reviewer`. Migration destrutiva: consulte `db-migrator`. São insumos desta revisão consolidada, não um terceiro gate genérico.
+- Se um insumo exigir correção, implemente-a, fixe o novo `head_sha` e atualize os insumos invalidados antes do despacho.
+- Despache `slice-reviewer` uma vez com worktree, branch, esses SHAs, todos os critérios e fora de escopo da issue, relatórios de todas as fatias, os insumos obrigatórios e o diff completo `base_sha...head_sha`.
 - Se houver `changes_requested`, devolva ao `implementer` somente blockers pendentes ou mudança de escopo. O `slice-reviewer` pode corrigir blockers no próprio commit, mas só retorna `approve_with_fixes` depois de rever e revalidar o diff completo no novo `head_sha`.
 - Toda alteração invalida aprovação e evidência anteriores: refaça esta revisão consolidada contra a mesma `base_sha` e o novo `head_sha`. Altere a base somente após rebase ou atualização deliberada. Máximo de 2 ciclos; depois pare e reporte.
 - Só avance quando `approved_sha` e `reviewed_head` do revisor forem o `HEAD` atual e o veredito consolidado for `approve` ou `approve_with_fixes`. Comente no Linear a base, o head, o veredito e as validações da revisão consolidada.
